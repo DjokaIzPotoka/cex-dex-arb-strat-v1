@@ -1,0 +1,5 @@
+questdb_data/
+*.qdb
+.env
+config.yaml
+cmake-build-debug
