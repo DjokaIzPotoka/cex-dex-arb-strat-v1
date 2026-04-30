@@ -1,0 +1,14 @@
+version: '3'
+services:
+  questdb:
+    image: questdb/questdb
+    container_name: zora_questdb
+    ports:
+      - "9000:9000"
+      - "9009:9009"
+      - "8812:8812"
+    volumes:
+      - questdb_data:/var/lib/questdb
+
+volumes:
+  questdb_data:

@@ -1,0 +1,4 @@
+questdb_data/
+*.qdb
+.env
+config.yaml
