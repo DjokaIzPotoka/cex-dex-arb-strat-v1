@@ -54,15 +54,12 @@ int main() {
 
             g_total_trades++;
 
-            int64_t latency_ms = (trade->receive_ts - trade->timestamp) / 1'000'000;
+            int64_t latency_ms = (trade->timestamp - trade->receive_ts) / 1'000'000;
+            double trade_value = trade->price * trade->amount;
+            bool is_whale =  trade_value > 100'000 ? true : false;
 
-            std::cout << "[BINANCE] "
-                      << trade->symbol
-                      << " | Price: "  << trade->price
-                      << " | Side: "   << trade->side
-                      << " | Qty: "    << trade->amount
-                      << " | Latency: " << latency_ms << "ms"
-                      << "\n";
+            std::cout << "[BINANCE] " << trade->symbol << " | Price: " << trade->price << " | Side: " << trade->side << " | Qty: "  << trade->amount
+                        << " | Value: " << trade_value << " | Whale: " << is_whale << " | Latency: " << latency_ms << "ms" << "\n";
         }
     );
 
