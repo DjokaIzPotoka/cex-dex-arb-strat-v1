@@ -1,70 +1,75 @@
-#include "websocket_client.h"
-#include "decoder.h"
-#include "types.h"
-#include <iostream>
-#include <atomic>
-#include <chrono>
-#include <windows.h>
+#include "websocket/client.h"
+#include "handlers/book_ticker_handler.h"
+#include "ipc/shm_writer.h"
+#include "utils/logger.h"
+#include "zora_ipc.h"
 
-// ── Konfiguracija ──────────────────────────────
-static const std::string HOST   = "fstream.binance.com";
-static const std::string PORT   = "443";
-static const std::string STREAM = "btcusdt@trade";
-// ───────────────────────────────────────────────
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 
-static std::atomic<bool>     g_running{true};
-static std::atomic<uint64_t> g_total_trades{0};
-static WebSocketClient*      g_client = nullptr;
-static auto                  g_start  = std::chrono::steady_clock::now();
+namespace {
 
-BOOL WINAPI console_handler(DWORD signal) {
-    if (signal == CTRL_C_EVENT) {
-        auto now     = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>
-                       (now - g_start).count();
+constexpr const char* kHost   = "stream.binance.com";
+constexpr const char* kPort   = "9443";
+constexpr const char* kPath   = "/ws/solusdc@bookTicker";
+constexpr const char* kSymbol = "SOLUSDC";
 
-        std::cout << "\n──────────────────────────────\n";
-        std::cout << "[STATS] Ukupno:  " << g_total_trades << "\n";
-        std::cout << "[STATS] Vreme rada:     " << elapsed << "s\n";
-        if (elapsed > 0)
-            std::cout << "[STATS] Prosek/sec:     "
-                      << g_total_trades / elapsed << "\n";
-        std::cout << "──────────────────────────────\n";
+zora::websocket::Client* g_client = nullptr;
 
-        g_running = false;
-        if (g_client) g_client->stop();
-        return TRUE;
-    }
-    return FALSE;
+extern "C" void handle_signal(int) {
+    if (g_client) g_client->stop();
 }
 
+void install_signal_handlers() {
+    struct sigaction sa{};
+    sa.sa_handler = handle_signal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0; // no SA_RESTART: lets a blocked read() unblock on signal
+    sigaction(SIGINT, &sa, nullptr);
+    sigaction(SIGTERM, &sa, nullptr);
+}
+
+} // namespace
+
 int main() {
-    SetConsoleCtrlHandler(console_handler, TRUE);
+    using zora::utils::LogLevel;
 
-    std::cout << "[Main] Starting...\n";
+    // C's stdio switches from line-buffered to fully block-buffered
+    // (4-8KB) the moment stdout isn't a TTY -- which is always true
+    // when this runs under scripts/start.sh's log-prefixing pipe.
+    // Without this, log lines can sit unflushed for a long time at low
+    // tick rates, breaking the "visible in real time" point of that
+    // pipe. Line-buffering costs a flush per log line, which is
+    // already priced in: logging was already the dominant cost next to
+    // the <10us compute budget (see book_ticker_handler.cpp).
+    setvbuf(stdout, nullptr, _IOLBF, 0);
 
-    TradeDecoder decoder;
-    std::string path = "/ws/" + STREAM;
+    install_signal_handlers();
 
-    WebSocketClient client(
-        HOST, PORT, path,
-        [&](const std::string& msg) {
-            auto trade = decoder.decode(msg);
-            if (!trade.has_value()) return;
+    zora::ipc::ShmWriter shm;
+    if (!shm.init(kSymbol)) {
+        zora::utils::log_line(LogLevel::Error, "Failed to create shared memory segment");
+        return EXIT_FAILURE;
+    }
+    zora::utils::log_line(LogLevel::Info, "SHM created: " ZORA_SHM_CEX_NAME);
 
-            g_total_trades++;
+    zora::handlers::BookTickerHandler handler(shm);
 
-            int64_t latency_ms = (trade->timestamp - trade->receive_ts) / 1'000'000;
-            double trade_value = trade->price * trade->amount;
-            bool is_whale =  trade_value > 100'000 ? true : false;
-
-            std::cout << "[BINANCE] " << trade->symbol << " | Price: " << trade->price << " | Side: " << trade->side << " | Qty: "  << trade->amount
-                        << " | Value: " << trade_value << " | Whale: " << is_whale << " | Latency: " << latency_ms << "ms" << "\n";
+    zora::websocket::Client client(
+        kHost, kPort, kPath,
+        [&handler](std::string_view msg, uint64_t receive_ts_us) {
+            handler.handle(msg, receive_ts_us);
+        },
+        [&shm]() {
+            shm.signal_gap();
         }
     );
 
     g_client = &client;
     client.run();
 
-    return 0;
+    shm.shutdown();
+    zora::utils::log_line(LogLevel::Info, "Shutdown complete");
+    return EXIT_SUCCESS;
 }

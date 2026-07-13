@@ -1,0 +1,3 @@
+/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/zore_core.dir
+/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/edit_cache.dir
+/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/rebuild_cache.dir

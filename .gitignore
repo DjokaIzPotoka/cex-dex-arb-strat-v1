@@ -3,3 +3,4 @@ questdb_data/
 .env
 config.yaml
 cmake-build-debug
+ingestor-dex-solana/target/
