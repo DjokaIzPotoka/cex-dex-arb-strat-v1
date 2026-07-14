@@ -34,15 +34,17 @@ BookTickerHandler::BookTickerHandler(zora::ipc::ShmWriter& shm)
     // doesn't pay an allocation on the hot path.
     auto err = parser_.allocate(kBufCapacity);
     if (err) {
-        zora::utils::log_fmt(LogLevel::Error,
-            "Failed to preallocate JSON parser buffer: %s", simdjson::error_message(err));
+        char err_buf[64];
+        std::snprintf(err_buf, sizeof(err_buf), "%s", simdjson::error_message(err));
+        zora::utils::log(LogLevel::Error, {{"parser", "alloc_failed"}, {"reason", err_buf}});
     }
 }
 
 void BookTickerHandler::handle(std::string_view raw, uint64_t receive_ts_us) noexcept {
     if (raw.size() > kMaxMessage) {
-        zora::utils::log_fmt(LogLevel::Warn,
-            "Dropped oversized message (%zu bytes)", raw.size());
+        char size_buf[16];
+        std::snprintf(size_buf, sizeof(size_buf), "%zu", raw.size());
+        zora::utils::log(LogLevel::Warn, {{"dropped", "oversized_message"}, {"bytes", size_buf}});
         return;
     }
 
@@ -54,8 +56,9 @@ void BookTickerHandler::handle(std::string_view raw, uint64_t receive_ts_us) noe
     simdjson::ondemand::document doc;
     auto error = parser_.iterate(json_buf_, raw.size(), kBufCapacity).get(doc);
     if (error) {
-        zora::utils::log_fmt(LogLevel::Warn, "Parse error: %s",
-                              simdjson::error_message(error));
+        char err_buf[64];
+        std::snprintf(err_buf, sizeof(err_buf), "%s", simdjson::error_message(error));
+        zora::utils::log(LogLevel::Warn, {{"parse", "failed"}, {"reason", err_buf}});
         return;
     }
 
@@ -67,7 +70,7 @@ void BookTickerHandler::handle(std::string_view raw, uint64_t receive_ts_us) noe
 
     double bid = 0.0, ask = 0.0;
     if (!parse_double(bid_sv, bid) || !parse_double(ask_sv, ask)) {
-        zora::utils::log_line(LogLevel::Warn, "Failed to parse bid/ask");
+        zora::utils::log(LogLevel::Warn, {{"parse", "failed"}, {"reason", "bid_ask"}});
         return;
     }
 
@@ -75,13 +78,22 @@ void BookTickerHandler::handle(std::string_view raw, uint64_t receive_ts_us) noe
     double mid = (bid + ask) * 0.5;
 
     uint32_t seq = shm_.write(bid, ask, write_ts_us);
-
-    zora::utils::log_fmt(LogLevel::Book,
-        "bid=%.5f ask=%.5f mid=%.5f seq=%u", bid, ask, mid, seq);
-
     uint64_t age_us = write_ts_us - receive_ts_us;
-    zora::utils::log_fmt(LogLevel::Shm,
-        "Written seq=%u age=%lluus", seq, static_cast<unsigned long long>(age_us));
+
+    // One line per tick, matching the DEX ingestor's merged
+    // price/reserves/timing line: everything about this update in a
+    // single structured log call rather than split across two.
+    char bid_buf[24], ask_buf[24], mid_buf[24], seq_buf[16], age_buf[24];
+    std::snprintf(bid_buf, sizeof(bid_buf), "%.3f", bid);
+    std::snprintf(ask_buf, sizeof(ask_buf), "%.3f", ask);
+    std::snprintf(mid_buf, sizeof(mid_buf), "%.3f", mid);
+    std::snprintf(seq_buf, sizeof(seq_buf), "%u", seq);
+    std::snprintf(age_buf, sizeof(age_buf), "%lluus", static_cast<unsigned long long>(age_us));
+
+    zora::utils::log(LogLevel::Info, {
+        {"bid", bid_buf}, {"ask", ask_buf}, {"mid", mid_buf},
+        {"seq", seq_buf}, {"age", age_buf}
+    });
 }
 
 } // namespace zora::handlers

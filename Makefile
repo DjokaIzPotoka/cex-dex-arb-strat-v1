@@ -1,12 +1,7 @@
-.PHONY: build run stop status logs clean
+.PHONY: build rebuild start stop attach clean
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
-
-CEX_PID_FILE := /tmp/zora_cex.pid
-DEX_PID_FILE := /tmp/zora_dex.pid
-SUPERVISOR_PID_FILE := /tmp/zora_supervisor.pid
-LOG_FILE := /tmp/zora.log
 
 build:
 	@echo "Building CEX ingestor (C++, release)..."
@@ -20,31 +15,16 @@ build:
 	@echo "Building DEX ingestor (Rust, release)..."
 	@cd $(DEX_DIR) && cargo build --release
 
-run:
-	@nohup bash "$(CURDIR)/scripts/start.sh" >/dev/null 2>&1 &
-	@sleep 1
-	@echo "ZORA starting in the background (a fresh build can take a minute)."
-	@echo "Use 'make logs' to follow progress, 'make status' to check, 'make stop' to stop."
+rebuild: clean build
+
+start:
+	@bash "$(CURDIR)/scripts/zora.sh"
 
 stop:
 	@bash "$(CURDIR)/scripts/stop.sh"
 
-status:
-	@echo "--- ZORA status ---"; \
-	check() { \
-		if [ -f "$$2" ] && kill -0 "$$(cat $$2)" 2>/dev/null; then \
-			printf "%-12s running (PID %s)\n" "$$1" "$$(cat $$2)"; \
-		else \
-			printf "%-12s not running\n" "$$1"; \
-		fi; \
-	}; \
-	check "Supervisor:" "$(SUPERVISOR_PID_FILE)"; \
-	check "CEX:" "$(CEX_PID_FILE)"; \
-	check "DEX:" "$(DEX_PID_FILE)"
-
-logs:
-	@touch $(LOG_FILE)
-	@tail -f $(LOG_FILE)
+attach:
+	@tmux attach -t zora
 
 clean:
 	@echo "Cleaning C++ build artifacts..."

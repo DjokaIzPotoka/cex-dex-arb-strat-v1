@@ -56,9 +56,14 @@ void Client::run() {
             ++attempt;
             if (on_reconnect_) on_reconnect_();
 
-            zora::utils::log_fmt(LogLevel::Warn,
-                "Disconnected (%s) - reconnect attempt %d in %dms",
-                e.what(), attempt, delay_ms);
+            char attempt_buf[8], reason_buf[64];
+            std::snprintf(attempt_buf, sizeof(attempt_buf), "%d", attempt);
+            std::snprintf(reason_buf, sizeof(reason_buf), "%s", e.what());
+
+            zora::utils::log(LogLevel::Warn, {
+                {"websocket", "reconnecting"}, {"attempt", attempt_buf},
+                {"reason", reason_buf}, {"status", "RECONNECTING"}
+            });
 
             std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             delay_ms = std::min(delay_ms * 2, 30000);
@@ -83,8 +88,7 @@ void Client::connect() {
     ws_->next_layer().handshake(ssl::stream_base::client);
     ws_->handshake(host_, path_);
 
-    zora::utils::log_fmt(LogLevel::Info, "Connected to Binance spot (%s%s)",
-                          host_.c_str(), path_.c_str());
+    zora::utils::log(LogLevel::Info, {{"websocket", "connected"}, {"status", "CONNECTED"}});
     running_ = true;
 
     do_read();

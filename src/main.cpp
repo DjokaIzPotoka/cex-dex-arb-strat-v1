@@ -45,14 +45,16 @@ int main() {
     // the <10us compute budget (see book_ticker_handler.cpp).
     setvbuf(stdout, nullptr, _IOLBF, 0);
 
+    zora::utils::print_banner("ZORA CEX INGESTOR", "Binance SOL/USDC  bookTicker");
+
     install_signal_handlers();
 
     zora::ipc::ShmWriter shm;
     if (!shm.init(kSymbol)) {
-        zora::utils::log_line(LogLevel::Error, "Failed to create shared memory segment");
+        zora::utils::log(LogLevel::Error, {{"shm", "create_failed"}, {"status", "ERROR"}});
         return EXIT_FAILURE;
     }
-    zora::utils::log_line(LogLevel::Info, "SHM created: " ZORA_SHM_CEX_NAME);
+    zora::utils::log(LogLevel::Info, {{"shm", "created"}, {"path", ZORA_SHM_CEX_NAME}});
 
     zora::handlers::BookTickerHandler handler(shm);
 
@@ -70,6 +72,6 @@ int main() {
     client.run();
 
     shm.shutdown();
-    zora::utils::log_line(LogLevel::Info, "Shutdown complete");
+    zora::utils::log(LogLevel::Info, {{"shutdown", "complete"}});
     return EXIT_SUCCESS;
 }

@@ -13,11 +13,13 @@ use anyhow::{Context, Result};
 use solana_sdk::pubkey::Pubkey;
 use tokio::signal::unix::{signal, SignalKind};
 
+mod logger;
 mod pool;
 mod rpc;
 mod shm;
 mod types;
 
+use logger::Level;
 use shm::ShmWriter;
 
 // Raydium SOL/USDC pool. The pool ID itself isn't needed by this MVP
@@ -47,28 +49,9 @@ fn now_micros() -> u64 {
         .unwrap_or(0)
 }
 
-/// Configures env_logger with the timestamp format the rest of ZORA's
-/// logs use: `[YYYY-MM-DD HH:MM:SS.mmm] LEVEL message`. `RUST_LOG` can
-/// still override the level filter; it just defaults to `info` instead
-/// of env_logger's usual default of `error`.
-fn init_logger() {
-    use std::io::Write;
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "[{}] {:<5} {}",
-                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
-                record.level(),
-                record.args()
-            )
-        })
-        .init();
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_logger();
+    logger::print_banner("ZORA DEX INGESTOR", "Raydium SOL/USDC  mainnet");
 
     // The `?` operator here unwraps `Ok` or returns early with `Err`
     // wrapped in the surrounding function's `Result` -- since `main`
@@ -83,21 +66,36 @@ async fn main() -> Result<()> {
     let usdc_vault = Pubkey::from_str(USDC_VAULT).context("invalid USDC vault pubkey")?;
 
     let client = rpc::build_client();
-    log::info!("Connected to Solana RPC");
-    log::info!(
-        "Raydium pool={} sol_vault={} usdc_vault={}",
-        RAYDIUM_POOL_ID,
-        SOL_VAULT,
-        USDC_VAULT
+    // Not "status=CONNECTED" yet: constructing an RpcClient doesn't
+    // itself talk to the network, so we don't actually know the RPC
+    // endpoint is reachable until the first fetch below succeeds. The
+    // banner keeps showing CONNECTING... until then.
+    logger::log(
+        Level::Info,
+        &[
+            ("pool", RAYDIUM_POOL_ID),
+            ("sol_vault", SOL_VAULT),
+            ("usdc_vault", USDC_VAULT),
+        ],
     );
 
     let mut shm_writer = ShmWriter::new().context("failed to create shared memory segment")?;
-    log::info!("SHM created: {}", types::ZORA_SHM_DEX_NAME);
+    logger::log(
+        Level::Info,
+        &[("shm", "created"), ("path", types::ZORA_SHM_DEX_NAME)],
+    );
 
     // SIGTERM needs explicit opt-in on Unix (there's no default
     // handler tokio installs for it); Ctrl+C / SIGINT is handled
     // portably by `tokio::signal::ctrl_c()` in the select! below.
     let mut sigterm = signal(SignalKind::terminate())?;
+
+    // Tracks whether we've had at least one successful fetch (flips the
+    // banner's status from CONNECTING to CONNECTED, once) and how many
+    // consecutive failures we've seen (mirrors the CEX ingestor's
+    // websocket reconnect `attempt` counter, logged as `retry=`).
+    let mut connected = false;
+    let mut retry_count: u32 = 0;
 
     loop {
         let start = Instant::now();
@@ -123,7 +121,10 @@ async fn main() -> Result<()> {
         {
             Ok(Ok((state, network_elapsed, parse_elapsed))) => {
                 let shm_start = Instant::now();
-                let seq = shm_writer.write(
+                // Sequence itself lives in SHM for the spread detector
+                // to read, not in the log line -- the target DEX log
+                // format doesn't carry a seq= field the way CEX's does.
+                let _seq = shm_writer.write(
                     state.reserve_sol,
                     state.reserve_usdc,
                     state.price,
@@ -141,43 +142,72 @@ async fn main() -> Result<()> {
                 // side's, instead of only capturing the SHM write.
                 let code_elapsed = parse_elapsed + shm_elapsed;
                 total_elapsed = start.elapsed();
+                retry_count = 0;
 
-                log::info!("Pool price={:.4} slot={}", state.price, state.slot);
-                log::info!(
-                    "Reserves sol={:.1} usdc={:.1}",
-                    state.reserve_sol as f64 / 1_000_000_000.0,
-                    state.reserve_usdc as f64 / 1_000_000.0
-                );
-                // Three numbers instead of one: `network` is Solana
-                // RPC's round-trip (not under our control -- fix by
-                // switching provider, not by touching this code);
-                // `code` is our own SHM-write work; `total` is what
-                // actually determines whether we keep up with the
-                // 400ms poll cadence.
-                log::info!(
-                    "SHM written seq={} network={}us code={}us total={}us",
-                    seq,
-                    network_elapsed.as_micros(),
-                    code_elapsed.as_micros(),
-                    total_elapsed.as_micros()
+                if !connected {
+                    connected = true;
+                    logger::log(
+                        Level::Info,
+                        &[("rpc", "connected"), ("status", "CONNECTED")],
+                    );
+                }
+
+                // One line per tick: price/reserves/slot plus timing.
+                // `net` (not `network`) and milliseconds (not micros)
+                // to match the target format -- network round trips
+                // are the slow, millisecond-scale part here, unlike
+                // `code`, which stays in microseconds since it's fast
+                // enough that milliseconds would round it to 0.
+                logger::log(
+                    Level::Info,
+                    &[
+                        ("price", &format!("{:.3}", state.price)),
+                        ("sol", &format!("{:.1}", state.reserve_sol as f64 / 1_000_000_000.0)),
+                        ("usdc", &format!("{:.1}", state.reserve_usdc as f64 / 1_000_000.0)),
+                        ("slot", &state.slot.to_string()),
+                        ("net", &format!("{}ms", network_elapsed.as_millis())),
+                        ("code", &format!("{}us", code_elapsed.as_micros())),
+                    ],
                 );
 
                 if network_elapsed > RPC_WARN_THRESHOLD {
-                    log::warn!("RPC latency high: {}ms", network_elapsed.as_millis());
+                    logger::log(
+                        Level::Warn,
+                        &[
+                            ("rpc", "slow"),
+                            ("latency", &format!("{}ms", network_elapsed.as_millis())),
+                            ("threshold", &format!("{}ms", RPC_WARN_THRESHOLD.as_millis())),
+                        ],
+                    );
                 }
             }
             // The RPC call completed (didn't time out) but returned an
             // error -- e.g. an account genuinely not found, or the
             // connection was refused outright. Never panics: this just
             // skips the tick rather than killing the process. `{:#}`
-            // prints anyhow's full context chain (e.g. "get_multiple_
-            // accounts RPC call failed: <underlying error>") instead of
-            // just the outer message.
+            // carries anyhow's full context chain (e.g. "get_multiple_
+            // accounts RPC call failed: <underlying error>"), not just
+            // the outer message.
             Ok(Err(e)) => {
                 total_elapsed = start.elapsed();
-                log::error!("RPC fetch failed: {:#}", e);
+                retry_count += 1;
+                logger::log(
+                    Level::Error,
+                    &[
+                        ("rpc", "failed"),
+                        ("reason", &format!("{:#}", e)),
+                        ("retry", &retry_count.to_string()),
+                    ],
+                );
                 if total_elapsed > RPC_WARN_THRESHOLD {
-                    log::warn!("RPC latency high: {}ms", total_elapsed.as_millis());
+                    logger::log(
+                        Level::Warn,
+                        &[
+                            ("rpc", "slow"),
+                            ("latency", &format!("{}ms", total_elapsed.as_millis())),
+                            ("threshold", &format!("{}ms", RPC_WARN_THRESHOLD.as_millis())),
+                        ],
+                    );
                 }
             }
             // The timeout won the race: the fetch was still pending
@@ -185,8 +215,23 @@ async fn main() -> Result<()> {
             // (cancelling the in-flight request) and returned Elapsed.
             Err(_elapsed) => {
                 total_elapsed = start.elapsed();
-                log::error!("RPC fetch timed out after {:?}", RPC_TIMEOUT);
-                log::warn!("RPC latency high: {}ms", total_elapsed.as_millis());
+                retry_count += 1;
+                logger::log(
+                    Level::Error,
+                    &[
+                        ("rpc", "failed"),
+                        ("reason", "timeout"),
+                        ("retry", &retry_count.to_string()),
+                    ],
+                );
+                logger::log(
+                    Level::Warn,
+                    &[
+                        ("rpc", "slow"),
+                        ("latency", &format!("{}ms", total_elapsed.as_millis())),
+                        ("threshold", &format!("{}ms", RPC_WARN_THRESHOLD.as_millis())),
+                    ],
+                );
             }
         }
 
@@ -209,6 +254,6 @@ async fn main() -> Result<()> {
     }
 
     shm_writer.shutdown();
-    log::info!("DEX ingestor shutdown complete");
+    logger::log(Level::Info, &[("shutdown", "complete")]);
     Ok(())
 }
