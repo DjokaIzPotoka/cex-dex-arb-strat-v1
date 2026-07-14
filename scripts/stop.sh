@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 #
+<<<<<<< Updated upstream
 # Stops both ingestors cleanly via SIGTERM (never SIGKILL, unless one
 # refuses to exit -- see WAIT_SECONDS below).
+=======
+# Stops all three ZORA processes (SIGTERM first, so CEX/DEX clean up
+# their own shared memory segments) and tears down the 'zora' tmux
+# session. Called both by `make stop` (from outside tmux) and by the
+# status pane's own Ctrl+C handler (from inside tmux) -- same logic
+# either way.
+>>>>>>> Stashed changes
 set -uo pipefail
 
 CEX_PID_FILE="/tmp/zora_cex.pid"
 DEX_PID_FILE="/tmp/zora_dex.pid"
+<<<<<<< Updated upstream
 SUPERVISOR_PID_FILE="/tmp/zora_supervisor.pid"
 
 WAIT_SECONDS=10
@@ -13,6 +22,36 @@ WAIT_SECONDS=10
 wait_for_exit() {
     local pid="$1" waited=0
     while kill -0 "$pid" 2>/dev/null; do
+=======
+SPR_PID_FILE="/tmp/zora_spr.pid"
+MAX_WAIT_SECONDS=3
+
+pids=()
+for f in "$CEX_PID_FILE" "$DEX_PID_FILE" "$SPR_PID_FILE"; do
+    if [ -f "$f" ]; then
+        pid="$(cat "$f" 2>/dev/null || true)"
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            pids+=("$pid")
+        fi
+    fi
+done
+
+if [ "${#pids[@]}" -eq 0 ]; then
+    echo "No running ZORA processes found."
+else
+    for pid in "${pids[@]}"; do
+        echo "Sending SIGTERM to PID $pid..."
+        kill -TERM "$pid" 2>/dev/null
+    done
+
+    waited=0
+    while [ "$waited" -lt $((MAX_WAIT_SECONDS * 2)) ]; do
+        still_alive=0
+        for pid in "${pids[@]}"; do
+            kill -0 "$pid" 2>/dev/null && still_alive=1
+        done
+        [ "$still_alive" -eq 0 ] && break
+>>>>>>> Stashed changes
         sleep 0.5
         waited=$((waited + 1))
         if [ "$waited" -ge $((WAIT_SECONDS * 2)) ]; then
@@ -22,6 +61,7 @@ wait_for_exit() {
     return 0
 }
 
+<<<<<<< Updated upstream
 stop_pid_file() {
     local name="$1" pid_file="$2"
     if [ ! -f "$pid_file" ]; then
@@ -43,6 +83,10 @@ stop_pid_file() {
     fi
     rm -f "$pid_file"
 }
+=======
+rm -f "$CEX_PID_FILE" "$DEX_PID_FILE" "$SPR_PID_FILE"
+tmux kill-session -t "$SESSION" 2>/dev/null || true
+>>>>>>> Stashed changes
 
 # Preferred path: stop start.sh's own supervisor loop, which cleanly
 # stops both ingestors itself via its SIGTERM trap. Signalling an

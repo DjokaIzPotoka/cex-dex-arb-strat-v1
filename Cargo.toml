@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = ["spread-detector"]
+# ingestor-dex-solana is deliberately kept out of this workspace: Cargo
+# workspaces share a single target/ directory at the workspace root,
+# which would move that crate's build output from
+# ingestor-dex-solana/target/ to ./target/ -- a breaking path change
+# for scripts/zora.sh and the root Makefile, for a modest build-time
+# benefit (some shared deps like tokio/anyhow/libc compiled once
+# instead of twice). Without this exclude, Cargo would otherwise error
+# because ingestor-dex-solana/Cargo.toml sits inside this workspace
+# root's directory tree.
+exclude = ["ingestor-dex-solana"]

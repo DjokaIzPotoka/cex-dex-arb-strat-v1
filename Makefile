@@ -19,6 +19,8 @@ build:
 	@cmake --build $(CEX_BUILD_DIR)
 	@echo "Building DEX ingestor (Rust, release)..."
 	@cd $(DEX_DIR) && cargo build --release
+	@echo "Building spread detector (Rust, release)..."
+	@cargo build --release --manifest-path spread-detector/Cargo.toml
 
 run:
 	@nohup bash "$(CURDIR)/scripts/start.sh" >/dev/null 2>&1 &
@@ -51,3 +53,4 @@ clean:
 	@rm -rf $(CEX_BUILD_DIR)
 	@echo "Cleaning Rust build artifacts..."
 	@cd $(DEX_DIR) && cargo clean
+	@cargo clean --manifest-path spread-detector/Cargo.toml

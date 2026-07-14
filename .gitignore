@@ -4,3 +4,5 @@ questdb_data/
 config.yaml
 cmake-build-debug
 ingestor-dex-solana/target/
+target/
+data/*.csv
