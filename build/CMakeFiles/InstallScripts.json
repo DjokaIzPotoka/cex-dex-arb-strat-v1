@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"/Users/veljko/Desktop/zore-core-v1/build/cmake_install.cmake"
+		"/home/djokaizpotoka/CLionProjects/zora-core-v1/build/cmake_install.cmake"
 	],
 	"Parallel" : false
 }

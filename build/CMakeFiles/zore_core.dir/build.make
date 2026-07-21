@@ -44,19 +44,19 @@ cmake_force:
 SHELL = /bin/sh
 
 # The CMake executable.
-CMAKE_COMMAND = /opt/homebrew/bin/cmake
+CMAKE_COMMAND = /usr/bin/cmake
 
 # The command to remove a file.
-RM = /opt/homebrew/bin/cmake -E rm -f
+RM = /usr/bin/cmake -E rm -f
 
 # Escaping for special characters.
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/veljko/Desktop/zore-core-v1
+CMAKE_SOURCE_DIR = /home/djokaizpotoka/CLionProjects/zora-core-v1
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/veljko/Desktop/zore-core-v1/build
+CMAKE_BINARY_DIR = /home/djokaizpotoka/CLionProjects/zora-core-v1/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/zore_core.dir/depend.make
@@ -73,60 +73,60 @@ CMakeFiles/zore_core.dir/codegen:
 .PHONY : CMakeFiles/zore_core.dir/codegen
 
 CMakeFiles/zore_core.dir/src/main.cpp.o: CMakeFiles/zore_core.dir/flags.make
-CMakeFiles/zore_core.dir/src/main.cpp.o: /Users/veljko/Desktop/zore-core-v1/src/main.cpp
+CMakeFiles/zore_core.dir/src/main.cpp.o: /home/djokaizpotoka/CLionProjects/zora-core-v1/src/main.cpp
 CMakeFiles/zore_core.dir/src/main.cpp.o: CMakeFiles/zore_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/zore_core.dir/src/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/main.cpp.o -MF CMakeFiles/zore_core.dir/src/main.cpp.o.d -o CMakeFiles/zore_core.dir/src/main.cpp.o -c /Users/veljko/Desktop/zore-core-v1/src/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/zore_core.dir/src/main.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/main.cpp.o -MF CMakeFiles/zore_core.dir/src/main.cpp.o.d -o CMakeFiles/zore_core.dir/src/main.cpp.o -c /home/djokaizpotoka/CLionProjects/zora-core-v1/src/main.cpp
 
 CMakeFiles/zore_core.dir/src/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/zore_core.dir/src/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/veljko/Desktop/zore-core-v1/src/main.cpp > CMakeFiles/zore_core.dir/src/main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/djokaizpotoka/CLionProjects/zora-core-v1/src/main.cpp > CMakeFiles/zore_core.dir/src/main.cpp.i
 
 CMakeFiles/zore_core.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/zore_core.dir/src/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/veljko/Desktop/zore-core-v1/src/main.cpp -o CMakeFiles/zore_core.dir/src/main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/djokaizpotoka/CLionProjects/zora-core-v1/src/main.cpp -o CMakeFiles/zore_core.dir/src/main.cpp.s
 
 CMakeFiles/zore_core.dir/src/websocket/client.cpp.o: CMakeFiles/zore_core.dir/flags.make
-CMakeFiles/zore_core.dir/src/websocket/client.cpp.o: /Users/veljko/Desktop/zore-core-v1/src/websocket/client.cpp
+CMakeFiles/zore_core.dir/src/websocket/client.cpp.o: /home/djokaizpotoka/CLionProjects/zora-core-v1/src/websocket/client.cpp
 CMakeFiles/zore_core.dir/src/websocket/client.cpp.o: CMakeFiles/zore_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/zore_core.dir/src/websocket/client.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/websocket/client.cpp.o -MF CMakeFiles/zore_core.dir/src/websocket/client.cpp.o.d -o CMakeFiles/zore_core.dir/src/websocket/client.cpp.o -c /Users/veljko/Desktop/zore-core-v1/src/websocket/client.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/zore_core.dir/src/websocket/client.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/websocket/client.cpp.o -MF CMakeFiles/zore_core.dir/src/websocket/client.cpp.o.d -o CMakeFiles/zore_core.dir/src/websocket/client.cpp.o -c /home/djokaizpotoka/CLionProjects/zora-core-v1/src/websocket/client.cpp
 
 CMakeFiles/zore_core.dir/src/websocket/client.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/zore_core.dir/src/websocket/client.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/veljko/Desktop/zore-core-v1/src/websocket/client.cpp > CMakeFiles/zore_core.dir/src/websocket/client.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/djokaizpotoka/CLionProjects/zora-core-v1/src/websocket/client.cpp > CMakeFiles/zore_core.dir/src/websocket/client.cpp.i
 
 CMakeFiles/zore_core.dir/src/websocket/client.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/zore_core.dir/src/websocket/client.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/veljko/Desktop/zore-core-v1/src/websocket/client.cpp -o CMakeFiles/zore_core.dir/src/websocket/client.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/djokaizpotoka/CLionProjects/zora-core-v1/src/websocket/client.cpp -o CMakeFiles/zore_core.dir/src/websocket/client.cpp.s
 
 CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o: CMakeFiles/zore_core.dir/flags.make
-CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o: /Users/veljko/Desktop/zore-core-v1/src/handlers/book_ticker_handler.cpp
+CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o: /home/djokaizpotoka/CLionProjects/zora-core-v1/src/handlers/book_ticker_handler.cpp
 CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o: CMakeFiles/zore_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o -MF CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o.d -o CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o -c /Users/veljko/Desktop/zore-core-v1/src/handlers/book_ticker_handler.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o -MF CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o.d -o CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o -c /home/djokaizpotoka/CLionProjects/zora-core-v1/src/handlers/book_ticker_handler.cpp
 
 CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/veljko/Desktop/zore-core-v1/src/handlers/book_ticker_handler.cpp > CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/djokaizpotoka/CLionProjects/zora-core-v1/src/handlers/book_ticker_handler.cpp > CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.i
 
 CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/veljko/Desktop/zore-core-v1/src/handlers/book_ticker_handler.cpp -o CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/djokaizpotoka/CLionProjects/zora-core-v1/src/handlers/book_ticker_handler.cpp -o CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.s
 
 CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o: CMakeFiles/zore_core.dir/flags.make
-CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o: /Users/veljko/Desktop/zore-core-v1/src/ipc/shm_writer.cpp
+CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o: /home/djokaizpotoka/CLionProjects/zora-core-v1/src/ipc/shm_writer.cpp
 CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o: CMakeFiles/zore_core.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o -MF CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o.d -o CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o -c /Users/veljko/Desktop/zore-core-v1/src/ipc/shm_writer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o -MF CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o.d -o CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o -c /home/djokaizpotoka/CLionProjects/zora-core-v1/src/ipc/shm_writer.cpp
 
 CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/veljko/Desktop/zore-core-v1/src/ipc/shm_writer.cpp > CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/djokaizpotoka/CLionProjects/zora-core-v1/src/ipc/shm_writer.cpp > CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.i
 
 CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/veljko/Desktop/zore-core-v1/src/ipc/shm_writer.cpp -o CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/djokaizpotoka/CLionProjects/zora-core-v1/src/ipc/shm_writer.cpp -o CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.s
 
 # Object files for target zore_core
 zore_core_OBJECTS = \
@@ -143,11 +143,11 @@ zore_core: CMakeFiles/zore_core.dir/src/websocket/client.cpp.o
 zore_core: CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o
 zore_core: CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o
 zore_core: CMakeFiles/zore_core.dir/build.make
-zore_core: /opt/homebrew/lib/libssl.dylib
-zore_core: /opt/homebrew/lib/libcrypto.dylib
-zore_core: /opt/homebrew/lib/libsimdjson.33.0.0.dylib
+zore_core: /usr/lib64/libssl.so
+zore_core: /usr/lib64/libcrypto.so
+zore_core: /usr/lib64/libsimdjson.so.25.0.0
 zore_core: CMakeFiles/zore_core.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable zore_core"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable zore_core"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/zore_core.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -159,6 +159,6 @@ CMakeFiles/zore_core.dir/clean:
 .PHONY : CMakeFiles/zore_core.dir/clean
 
 CMakeFiles/zore_core.dir/depend:
-	cd /Users/veljko/Desktop/zore-core-v1/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/veljko/Desktop/zore-core-v1 /Users/veljko/Desktop/zore-core-v1 /Users/veljko/Desktop/zore-core-v1/build /Users/veljko/Desktop/zore-core-v1/build /Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/zore_core.dir/DependInfo.cmake "--color=$(COLOR)" zore_core
+	cd /home/djokaizpotoka/CLionProjects/zora-core-v1/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/djokaizpotoka/CLionProjects/zora-core-v1 /home/djokaizpotoka/CLionProjects/zora-core-v1 /home/djokaizpotoka/CLionProjects/zora-core-v1/build /home/djokaizpotoka/CLionProjects/zora-core-v1/build /home/djokaizpotoka/CLionProjects/zora-core-v1/build/CMakeFiles/zore_core.dir/DependInfo.cmake "--color=$(COLOR)" zore_core
 .PHONY : CMakeFiles/zore_core.dir/depend
 
