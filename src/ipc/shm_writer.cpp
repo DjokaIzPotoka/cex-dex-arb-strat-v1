@@ -14,8 +14,9 @@ ShmWriter::~ShmWriter() {
     shutdown();
 }
 
-bool ShmWriter::init(const char* symbol) noexcept {
-    fd_ = shm_open(ZORA_SHM_CEX_NAME, O_CREAT | O_RDWR, 0666);
+bool ShmWriter::init(const char* shm_name, const char* symbol) noexcept {
+    shm_name_ = shm_name;
+    fd_ = shm_open(shm_name_, O_CREAT | O_RDWR, 0666);
     if (fd_ == -1) return false;
 
     // On macOS, ftruncate on a POSIX shared memory object can only
@@ -85,7 +86,7 @@ void ShmWriter::shutdown() noexcept {
         fd_ = -1;
     }
     if (owns_segment_) {
-        shm_unlink(ZORA_SHM_CEX_NAME);
+        shm_unlink(shm_name_);
         owns_segment_ = false;
     }
 }

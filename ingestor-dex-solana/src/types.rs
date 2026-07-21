@@ -26,8 +26,14 @@ pub struct ZoraDexPrice {
     pub slot: u64,         // Solana slot this snapshot came from
 }
 
-/// POSIX shared memory segment name the spread detector reads from.
+/// POSIX shared memory segment names the spread detector reads from.
+/// SOL/USDC keeps its original name unchanged; RAY/USDC, BONK/USDC,
+/// ZEC/USDC, and UNI/USDC are new.
 pub const ZORA_SHM_DEX_NAME: &str = "/zora_dex_price";
+pub const ZORA_SHM_DEX_RAY_NAME: &str = "/zora_dex_ray";
+pub const ZORA_SHM_DEX_BONK_NAME: &str = "/zora_dex_bonk";
+pub const ZORA_SHM_DEX_ZEC_NAME: &str = "/zora_dex_zec";
+pub const ZORA_SHM_DEX_UNI_NAME: &str = "/zora_dex_uni";
 
 #[cfg(test)]
 mod tests {

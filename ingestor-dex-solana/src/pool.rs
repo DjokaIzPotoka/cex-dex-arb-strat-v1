@@ -13,22 +13,26 @@ pub struct DexPoolState {
     pub slot: u64,
 }
 
-const SOL_DECIMALS: f64 = 1_000_000_000.0;
 const USDC_DECIMALS: f64 = 1_000_000.0;
 
-/// Normalizes raw on-chain reserves (lamports / micro-USDC) into a
-/// USDC-per-SOL price. Returns 0.0 for an empty pool rather than
-/// dividing by zero -- shouldn't happen for a live pool, but 0.0 is an
-/// obviously-wrong sentinel a downstream reader will notice
-/// immediately, which is cheaper than plumbing a Result through for a
-/// case that shouldn't occur.
-pub fn calculate_price(reserve_sol: u64, reserve_usdc: u64) -> f64 {
-    let sol_normalized = reserve_sol as f64 / SOL_DECIMALS;
-    if sol_normalized == 0.0 {
+/// Normalizes raw on-chain reserves into a USDC-per-base-token price.
+/// `base_decimals` must match the base token's actual mint decimals --
+/// 9 for SOL, 6 for RAY, etc. (this used to be hardcoded to SOL's 9,
+/// which silently produced a price 1000x too high when reused for
+/// RAY/USDC, since RAY has 6 decimals; caught by testing the RAY pool
+/// live and noticing the price didn't match Binance's ~0.69 quote).
+/// Returns 0.0 for an empty pool rather than dividing by zero --
+/// shouldn't happen for a live pool, but 0.0 is an obviously-wrong
+/// sentinel a downstream reader will notice immediately, which is
+/// cheaper than plumbing a Result through for a case that shouldn't
+/// occur.
+pub fn calculate_price(reserve_base: u64, reserve_usdc: u64, base_decimals: u32) -> f64 {
+    let base_normalized = reserve_base as f64 / 10f64.powi(base_decimals as i32);
+    if base_normalized == 0.0 {
         return 0.0;
     }
     let usdc_normalized = reserve_usdc as f64 / USDC_DECIMALS;
-    usdc_normalized / sol_normalized
+    usdc_normalized / base_normalized
 }
 
 /// Raydium's constant-product (x * y = k) swap quote, in the pool's
@@ -53,16 +57,26 @@ mod tests {
     use super::*;
 
     #[test]
-    fn price_normalizes_decimals_correctly() {
-        // 1 SOL (1e9 lamports) in a pool worth 150 USDC (150e6
-        // micro-USDC) per SOL should normalize to price = 150.0
-        let price = calculate_price(1_000_000_000, 150_000_000);
+    fn price_normalizes_decimals_correctly_for_9_decimal_base() {
+        // 1 SOL (1e9 lamports, 9 decimals) in a pool worth 150 USDC
+        // (150e6 micro-USDC) per SOL should normalize to price = 150.0
+        let price = calculate_price(1_000_000_000, 150_000_000, 9);
         assert!((price - 150.0).abs() < 1e-9);
     }
 
     #[test]
+    fn price_normalizes_decimals_correctly_for_6_decimal_base() {
+        // 1 RAY (1e6 raw units, 6 decimals) in a pool worth 0.69 USDC
+        // per RAY should normalize to price = 0.69, not 690 -- this is
+        // exactly the bug that shipped when base_decimals wasn't a
+        // parameter (see calculate_price's doc comment).
+        let price = calculate_price(1_000_000, 690_000, 6);
+        assert!((price - 0.69).abs() < 1e-9);
+    }
+
+    #[test]
     fn price_is_zero_for_empty_pool() {
-        assert_eq!(calculate_price(0, 1_000_000), 0.0);
+        assert_eq!(calculate_price(0, 1_000_000, 9), 0.0);
     }
 
     #[test]

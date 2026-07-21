@@ -37,6 +37,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/opt/homebrew/bin/uname"
       - "/opt/homebrew/sbin/uname"
@@ -65,6 +66,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "message-v1"
     backtrace:
@@ -110,6 +112,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/opt/homebrew/bin/gmake"
       - "/opt/homebrew/sbin/gmake"
@@ -128,6 +131,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/gmake"
       - "/opt/pmk/env/global/bin/gmake"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/gmake"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/gmake"
       - "/opt/homebrew/bin/make"
       - "/opt/homebrew/sbin/make"
       - "/opt/homebrew/make"
@@ -155,6 +159,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -198,6 +203,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/opt/homebrew/bin/cc"
       - "/opt/homebrew/sbin/cc"
@@ -226,6 +232,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -269,6 +276,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "message-v1"
     backtrace:
@@ -358,6 +366,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/ar"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -377,6 +386,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -411,6 +421,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/ranlib"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -430,6 +441,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -464,6 +476,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/strip"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -483,6 +496,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -517,6 +531,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/ld"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -536,6 +551,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -570,6 +586,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/nm"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -589,6 +606,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -623,6 +641,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     found: "/usr/bin/objdump"
     search_context:
       CMAKE_PREFIX_PATH:
@@ -642,6 +661,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -676,6 +696,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/usr/bin/objcopy"
       - "/Library/Frameworks/Python.framework/Versions/3.13/bin/objcopy"
@@ -691,6 +712,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/objcopy"
       - "/opt/pmk/env/global/bin/objcopy"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/objcopy"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/objcopy"
     found: false
     search_context:
       CMAKE_PREFIX_PATH:
@@ -710,6 +732,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -744,6 +767,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/usr/bin/readelf"
       - "/Library/Frameworks/Python.framework/Versions/3.13/bin/readelf"
@@ -759,6 +783,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/readelf"
       - "/opt/pmk/env/global/bin/readelf"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/readelf"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/readelf"
     found: false
     search_context:
       CMAKE_PREFIX_PATH:
@@ -778,6 +803,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -812,6 +838,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/usr/bin/dlltool"
       - "/Library/Frameworks/Python.framework/Versions/3.13/bin/dlltool"
@@ -827,6 +854,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/dlltool"
       - "/opt/pmk/env/global/bin/dlltool"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/dlltool"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/dlltool"
     found: false
     search_context:
       CMAKE_PREFIX_PATH:
@@ -846,6 +874,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -880,6 +909,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/usr/bin/addr2line"
       - "/Library/Frameworks/Python.framework/Versions/3.13/bin/addr2line"
@@ -895,6 +925,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/addr2line"
       - "/opt/pmk/env/global/bin/addr2line"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/addr2line"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/addr2line"
     found: false
     search_context:
       CMAKE_PREFIX_PATH:
@@ -914,6 +945,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -948,6 +980,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/usr/bin/tapi"
       - "/Library/Frameworks/Python.framework/Versions/3.13/bin/tapi"
@@ -963,6 +996,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/tapi"
       - "/opt/pmk/env/global/bin/tapi"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/tapi"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/tapi"
     found: false
     search_context:
       CMAKE_PREFIX_PATH:
@@ -982,6 +1016,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -1028,6 +1063,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -1071,6 +1107,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
   -
     kind: "message-v1"
     backtrace:
@@ -1163,6 +1200,7 @@ events:
       - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
       - "/opt/pmk/env/global/bin/"
       - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
     searched_directories:
       - "/opt/homebrew/bin/install_name_tool"
       - "/opt/homebrew/sbin/install_name_tool"
@@ -1191,6 +1229,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
   -
     kind: "try_compile-v1"
@@ -1201,8 +1240,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd"
-      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd"
+      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T"
+      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T"
     cmakeVariables:
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
       CMAKE_C_FLAGS: ""
@@ -1215,18 +1254,18 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd'
+        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_aff6a/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_aff6a.dir/build.make CMakeFiles/cmTC_aff6a.dir/build
-        Building C object CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o
-        /usr/bin/cc   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_13d23/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_13d23.dir/build.make CMakeFiles/cmTC_13d23.dir/build
+        Building C object CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o
+        /usr/bin/cc   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
         Apple clang version 16.0.0 (clang-1600.0.26.6)
         Target: arm64-apple-darwin25.2.0
         Thread model: posix
         InstalledDir: /Library/Developer/CommandLineTools/usr/bin
         clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
-         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
+         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
         clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin25.2.0
         ignoring nonexistent directory "/usr/local/include"
         ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"
@@ -1238,13 +1277,13 @@ events:
          /Library/Developer/CommandLineTools/usr/include
          /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
         End of search list.
-        Linking C executable cmTC_aff6a
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_aff6a.dir/link.txt --verbose=1
+        Linking C executable cmTC_13d23
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_13d23.dir/link.txt --verbose=1
         Apple clang version 16.0.0 (clang-1600.0.26.6)
         Target: arm64-apple-darwin25.2.0
         Thread model: posix
         InstalledDir: /Library/Developer/CommandLineTools/usr/bin
-         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_aff6a -L/usr/local/lib -v CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
+         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_13d23 -L/usr/local/lib -v CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
         @(#)PROGRAM:ld PROJECT:ld-1115.7.3
         BUILD 23:52:02 Dec  5 2024
         configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
@@ -1256,7 +1295,7 @@ events:
         	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift
         Framework search paths:
         	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks
-        /usr/bin/cc  -arch arm64  -v -Wl,-v CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -o cmTC_aff6a
+        /usr/bin/cc  -arch arm64  -v -Wl,-v CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -o cmTC_13d23
         
       exitCode: 0
   -
@@ -1298,18 +1337,18 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd']
+        ignore line: [Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_aff6a/fast]
-        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_aff6a.dir/build.make CMakeFiles/cmTC_aff6a.dir/build]
-        ignore line: [Building C object CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o]
-        ignore line: [/usr/bin/cc   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_13d23/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_13d23.dir/build.make CMakeFiles/cmTC_13d23.dir/build]
+        ignore line: [Building C object CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/bin/cc   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
         ignore line: [Target: arm64-apple-darwin25.2.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
         ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
-        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-gjFRRd -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-HrsR3T -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin25.2.0]
         ignore line: [ignoring nonexistent directory "/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"]
@@ -1321,13 +1360,13 @@ events:
         ignore line: [ /Library/Developer/CommandLineTools/usr/include]
         ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
         ignore line: [End of search list.]
-        ignore line: [Linking C executable cmTC_aff6a]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_aff6a.dir/link.txt --verbose=1]
+        ignore line: [Linking C executable cmTC_13d23]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_13d23.dir/link.txt --verbose=1]
         ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
         ignore line: [Target: arm64-apple-darwin25.2.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
-        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_aff6a -L/usr/local/lib -v CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_13d23 -L/usr/local/lib -v CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
           arg [/Library/Developer/CommandLineTools/usr/bin/ld] ==> ignore
           arg [-demangle] ==> ignore
           arg [-lto_library] ==> ignore, skip following value
@@ -1344,10 +1383,10 @@ events:
           arg [-mllvm] ==> ignore
           arg [-enable-linkonceodr-outlining] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_aff6a] ==> ignore
+          arg [cmTC_13d23] ==> ignore
           arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_aff6a.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_13d23.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-lSystem] ==> lib [System]
           arg [/Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a] ==> lib [/Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
         linker tool for 'C': /Library/Developer/CommandLineTools/usr/bin/ld
@@ -1389,8 +1428,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz"
-      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz"
+      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx"
+      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
       CMAKE_CXX_FLAGS_DEBUG: "-g"
@@ -1404,19 +1443,19 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz'
+        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_c4223/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_c4223.dir/build.make CMakeFiles/cmTC_c4223.dir/build
-        Building CXX object CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o
-        /usr/bin/c++   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_b9b2b/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_b9b2b.dir/build.make CMakeFiles/cmTC_b9b2b.dir/build
+        Building CXX object CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         Apple clang version 16.0.0 (clang-1600.0.26.6)
         Target: arm64-apple-darwin25.2.0
         Thread model: posix
         InstalledDir: /Library/Developer/CommandLineTools/usr/bin
         clang++: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
         ignoring nonexistent directory "/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"
-         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin25.2.0
         ignoring nonexistent directory "/usr/local/include"
         ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"
@@ -1429,13 +1468,13 @@ events:
          /Library/Developer/CommandLineTools/usr/include
          /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
         End of search list.
-        Linking CXX executable cmTC_c4223
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c4223.dir/link.txt --verbose=1
+        Linking CXX executable cmTC_b9b2b
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b9b2b.dir/link.txt --verbose=1
         Apple clang version 16.0.0 (clang-1600.0.26.6)
         Target: arm64-apple-darwin25.2.0
         Thread model: posix
         InstalledDir: /Library/Developer/CommandLineTools/usr/bin
-         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_c4223 -L/usr/local/lib -v CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
+         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_b9b2b -L/usr/local/lib -v CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a
         @(#)PROGRAM:ld PROJECT:ld-1115.7.3
         BUILD 23:52:02 Dec  5 2024
         configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
@@ -1447,7 +1486,7 @@ events:
         	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift
         Framework search paths:
         	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks
-        /usr/bin/c++  -arch arm64  -v -Wl,-v CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_c4223
+        /usr/bin/c++  -arch arm64  -v -Wl,-v CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_b9b2b
         
       exitCode: 0
   -
@@ -1491,19 +1530,19 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
-        ignore line: [Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz']
+        ignore line: [Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_c4223/fast]
-        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_c4223.dir/build.make CMakeFiles/cmTC_c4223.dir/build]
-        ignore line: [Building CXX object CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/usr/bin/c++   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_b9b2b/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_b9b2b.dir/build.make CMakeFiles/cmTC_b9b2b.dir/build]
+        ignore line: [Building CXX object CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
         ignore line: [Target: arm64-apple-darwin25.2.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
         ignore line: [clang++: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
         ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"]
-        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-Rmy2Wz -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.2.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +v8.5a -target-feature +aes -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +lse -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sha2 -target-feature +sha3 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-feature +fullfp16 -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/16/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -fdebug-compilation-dir=/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-StqaRx -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin25.2.0]
         ignore line: [ignoring nonexistent directory "/usr/local/include"]
         ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"]
@@ -1516,13 +1555,13 @@ events:
         ignore line: [ /Library/Developer/CommandLineTools/usr/include]
         ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
         ignore line: [End of search list.]
-        ignore line: [Linking CXX executable cmTC_c4223]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c4223.dir/link.txt --verbose=1]
+        ignore line: [Linking CXX executable cmTC_b9b2b]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b9b2b.dir/link.txt --verbose=1]
         ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
         ignore line: [Target: arm64-apple-darwin25.2.0]
         ignore line: [Thread model: posix]
         ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
-        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_c4223 -L/usr/local/lib -v CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
+        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.2.0 15.2 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_b9b2b -L/usr/local/lib -v CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
           arg [/Library/Developer/CommandLineTools/usr/bin/ld] ==> ignore
           arg [-demangle] ==> ignore
           arg [-lto_library] ==> ignore, skip following value
@@ -1539,10 +1578,10 @@ events:
           arg [-mllvm] ==> ignore
           arg [-enable-linkonceodr-outlining] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_c4223] ==> ignore
+          arg [cmTC_b9b2b] ==> ignore
           arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
           arg [-v] ==> ignore
-          arg [CMakeFiles/cmTC_c4223.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_b9b2b.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-lc++] ==> lib [c++]
           arg [-lSystem] ==> lib [System]
           arg [/Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a] ==> lib [/Library/Developer/CommandLineTools/usr/lib/clang/16/lib/darwin/libclang_rt.osx.a]
@@ -1687,6 +1726,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
@@ -2191,6 +2231,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
@@ -2259,6 +2300,7 @@ events:
         - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
         - "/opt/pmk/env/global/bin"
         - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
@@ -2285,781 +2327,6 @@ events:
         - "/Library/Frameworks"
         - "/Network/Library/Frameworks"
         - "/System/Library/Frameworks"
-  -
-    kind: "find-v1"
-    backtrace:
-      - "/opt/homebrew/share/cmake/Modules/FindPkgConfig.cmake:517 (find_program)"
-      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:295 (find_package)"
-      - "CMakeLists.txt:8 (find_package)"
-    mode: "program"
-    variable: "PKG_CONFIG_EXECUTABLE"
-    description: "pkg-config executable"
-    settings:
-      SearchFramework: "FIRST"
-      SearchAppBundle: "FIRST"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "pkg-config"
-      - "pkgconf"
-    candidate_directories:
-      - "/opt/homebrew/bin/"
-      - "/opt/homebrew/sbin/"
-      - "/opt/homebrew/"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
-      - "/opt/homebrew/bin/"
-      - "/opt/homebrew/sbin/"
-      - "/usr/local/bin/"
-      - "/System/Cryptexes/App/usr/bin/"
-      - "/usr/bin/"
-      - "/bin/"
-      - "/usr/sbin/"
-      - "/sbin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
-      - "/opt/pmk/env/global/bin/"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/bin/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/sbin/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
-      - "/usr/local/bin/"
-      - "/usr/local/sbin/"
-      - "/usr/local/"
-      - "/usr/bin/"
-      - "/usr/sbin/"
-      - "/usr/"
-      - "/bin/"
-      - "/sbin/"
-      - "/usr/X11R6/bin/"
-      - "/usr/X11R6/sbin/"
-      - "/usr/X11R6/"
-      - "/usr/pkg/bin/"
-      - "/usr/pkg/sbin/"
-      - "/usr/pkg/"
-      - "/opt/bin/"
-      - "/opt/sbin/"
-      - "/opt/"
-      - "/sw/bin/"
-      - "/sw/sbin/"
-      - "/sw/"
-      - "/opt/local/bin/"
-      - "/opt/local/sbin/"
-      - "/opt/local/"
-      - "/Users/veljko/Applications/"
-      - "/Applications/"
-    searched_directories:
-      - "/opt/homebrew/bin/pkg-config"
-      - "/opt/homebrew/bin/pkgconf"
-      - "/opt/homebrew/sbin/pkg-config"
-      - "/opt/homebrew/sbin/pkgconf"
-      - "/opt/homebrew/pkg-config"
-      - "/opt/homebrew/pkgconf"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/pkg-config"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/pkgconf"
-      - "/opt/homebrew/bin/pkg-config"
-      - "/opt/homebrew/bin/pkgconf"
-      - "/opt/homebrew/sbin/pkg-config"
-      - "/opt/homebrew/sbin/pkgconf"
-      - "/usr/local/bin/pkg-config"
-      - "/usr/local/bin/pkgconf"
-      - "/System/Cryptexes/App/usr/bin/pkg-config"
-      - "/System/Cryptexes/App/usr/bin/pkgconf"
-      - "/usr/bin/pkg-config"
-      - "/usr/bin/pkgconf"
-      - "/bin/pkg-config"
-      - "/bin/pkgconf"
-      - "/usr/sbin/pkg-config"
-      - "/usr/sbin/pkgconf"
-      - "/sbin/pkg-config"
-      - "/sbin/pkgconf"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/pkg-config"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/pkgconf"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/pkg-config"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/pkgconf"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/pkg-config"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/pkgconf"
-      - "/opt/pmk/env/global/bin/pkg-config"
-      - "/opt/pmk/env/global/bin/pkgconf"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/pkg-config"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/pkgconf"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/bin/pkg-config"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/bin/pkgconf"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/sbin/pkg-config"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/sbin/pkgconf"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/pkg-config"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/pkgconf"
-      - "/usr/local/bin/pkg-config"
-      - "/usr/local/bin/pkgconf"
-      - "/usr/local/sbin/pkg-config"
-      - "/usr/local/sbin/pkgconf"
-      - "/usr/local/pkg-config"
-      - "/usr/local/pkgconf"
-      - "/usr/bin/pkg-config"
-      - "/usr/bin/pkgconf"
-      - "/usr/sbin/pkg-config"
-      - "/usr/sbin/pkgconf"
-      - "/usr/pkg-config"
-      - "/usr/pkgconf"
-      - "/bin/pkg-config"
-      - "/bin/pkgconf"
-      - "/sbin/pkg-config"
-      - "/sbin/pkgconf"
-      - "/usr/X11R6/bin/pkg-config"
-      - "/usr/X11R6/bin/pkgconf"
-      - "/usr/X11R6/sbin/pkg-config"
-      - "/usr/X11R6/sbin/pkgconf"
-      - "/usr/X11R6/pkg-config"
-      - "/usr/X11R6/pkgconf"
-      - "/usr/pkg/bin/pkg-config"
-      - "/usr/pkg/bin/pkgconf"
-      - "/usr/pkg/sbin/pkg-config"
-      - "/usr/pkg/sbin/pkgconf"
-      - "/usr/pkg/pkg-config"
-      - "/usr/pkg/pkgconf"
-      - "/opt/bin/pkg-config"
-      - "/opt/bin/pkgconf"
-      - "/opt/sbin/pkg-config"
-      - "/opt/sbin/pkgconf"
-      - "/opt/pkg-config"
-      - "/opt/pkgconf"
-      - "/sw/bin/pkg-config"
-      - "/sw/bin/pkgconf"
-      - "/sw/sbin/pkg-config"
-      - "/sw/sbin/pkgconf"
-      - "/sw/pkg-config"
-      - "/sw/pkgconf"
-      - "/opt/local/bin/pkg-config"
-      - "/opt/local/bin/pkgconf"
-      - "/opt/local/sbin/pkg-config"
-      - "/opt/local/sbin/pkgconf"
-      - "/opt/local/pkg-config"
-      - "/opt/local/pkgconf"
-      - "/Users/veljko/Applications/pkg-config"
-      - "/Users/veljko/Applications/pkgconf"
-      - "/Applications/pkg-config"
-      - "/Applications/pkgconf"
-    found: false
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/opt/homebrew"
-      ENV{PATH}:
-        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
-        - "/opt/homebrew/bin"
-        - "/opt/homebrew/sbin"
-        - "/usr/local/bin"
-        - "/System/Cryptexes/App/usr/bin"
-        - "/usr/bin"
-        - "/bin"
-        - "/usr/sbin"
-        - "/sbin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
-        - "/opt/pmk/env/global/bin"
-        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-        - "/sw"
-        - "/opt/local"
-      CMAKE_SYSTEM_APPBUNDLE_PATH:
-        - "/Users/veljko/Applications"
-        - "/Applications"
-  -
-    kind: "find-v1"
-    backtrace:
-      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:370 (find_path)"
-      - "CMakeLists.txt:8 (find_package)"
-    mode: "path"
-    variable: "OPENSSL_INCLUDE_DIR"
-    description: "Path to a file."
-    settings:
-      SearchFramework: "FIRST"
-      SearchAppBundle: "FIRST"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "openssl/ssl.h"
-    candidate_directories:
-      - "/opt/homebrew/include/include/"
-      - "/opt/homebrew/include/"
-      - "/opt/homebrew/include/"
-      - "/opt/homebrew/"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/include/"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
-      - "/opt/homebrew/bin/include/"
-      - "/opt/homebrew/bin/"
-      - "/opt/homebrew/sbin/include/"
-      - "/opt/homebrew/sbin/"
-      - "/usr/local/bin/include/"
-      - "/usr/local/bin/"
-      - "/System/Cryptexes/App/usr/bin/include/"
-      - "/System/Cryptexes/App/usr/bin/"
-      - "/usr/bin/include/"
-      - "/usr/bin/"
-      - "/bin/include/"
-      - "/bin/"
-      - "/usr/sbin/include/"
-      - "/usr/sbin/"
-      - "/sbin/include/"
-      - "/sbin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/include/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/include/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/include/"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
-      - "/opt/pmk/env/global/bin/include/"
-      - "/opt/pmk/env/global/bin/"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/include/"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
-      - "/usr/local/include/include/"
-      - "/usr/local/include/"
-      - "/usr/local/include/"
-      - "/usr/local/"
-      - "/usr/include/include/"
-      - "/usr/include/"
-      - "/usr/include/"
-      - "/usr/"
-      - "/include/include/"
-      - "/include/"
-      - "/usr/X11R6/include/include/"
-      - "/usr/X11R6/include/"
-      - "/usr/X11R6/include/"
-      - "/usr/X11R6/"
-      - "/usr/pkg/include/include/"
-      - "/usr/pkg/include/"
-      - "/usr/pkg/include/"
-      - "/usr/pkg/"
-      - "/opt/include/include/"
-      - "/opt/include/"
-      - "/opt/include/"
-      - "/opt/"
-      - "/sw/include/include/"
-      - "/sw/include/"
-      - "/sw/include/"
-      - "/sw/"
-      - "/opt/local/include/include/"
-      - "/opt/local/include/"
-      - "/opt/local/include/"
-      - "/opt/local/"
-      - "/usr/include/X11/include/"
-      - "/usr/include/X11/"
-      - "/Users/veljko/Library/Frameworks/include/"
-      - "/Users/veljko/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/include/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/include/"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
-      - "/Library/Frameworks/include/"
-      - "/Library/Frameworks/"
-      - "/Network/Library/Frameworks/include/"
-      - "/Network/Library/Frameworks/"
-      - "/System/Library/Frameworks/include/"
-      - "/System/Library/Frameworks/"
-    searched_directories:
-      - "/opt/homebrew/include/include/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/include/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/include/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/openssl.framework/Headers/ssl.h"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/bin/include/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/bin/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/sbin/include/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/sbin/openssl.framework/Headers/ssl.h"
-      - "/usr/local/bin/include/openssl.framework/Headers/ssl.h"
-      - "/usr/local/bin/openssl.framework/Headers/ssl.h"
-      - "/System/Cryptexes/App/usr/bin/include/openssl.framework/Headers/ssl.h"
-      - "/System/Cryptexes/App/usr/bin/openssl.framework/Headers/ssl.h"
-      - "/usr/bin/include/openssl.framework/Headers/ssl.h"
-      - "/usr/bin/openssl.framework/Headers/ssl.h"
-      - "/bin/include/openssl.framework/Headers/ssl.h"
-      - "/bin/openssl.framework/Headers/ssl.h"
-      - "/usr/sbin/include/openssl.framework/Headers/ssl.h"
-      - "/usr/sbin/openssl.framework/Headers/ssl.h"
-      - "/sbin/include/openssl.framework/Headers/ssl.h"
-      - "/sbin/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/include/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/include/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/include/openssl.framework/Headers/ssl.h"
-      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/openssl.framework/Headers/ssl.h"
-      - "/opt/pmk/env/global/bin/include/openssl.framework/Headers/ssl.h"
-      - "/opt/pmk/env/global/bin/openssl.framework/Headers/ssl.h"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/include/openssl.framework/Headers/ssl.h"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/openssl.framework/Headers/ssl.h"
-      - "/usr/local/include/include/openssl.framework/Headers/ssl.h"
-      - "/usr/local/include/openssl.framework/Headers/ssl.h"
-      - "/usr/local/include/openssl.framework/Headers/ssl.h"
-      - "/usr/local/openssl.framework/Headers/ssl.h"
-      - "/usr/include/include/openssl.framework/Headers/ssl.h"
-      - "/usr/include/openssl.framework/Headers/ssl.h"
-      - "/usr/include/openssl.framework/Headers/ssl.h"
-      - "/usr/openssl.framework/Headers/ssl.h"
-      - "/include/include/openssl.framework/Headers/ssl.h"
-      - "/include/openssl.framework/Headers/ssl.h"
-      - "/usr/X11R6/include/include/openssl.framework/Headers/ssl.h"
-      - "/usr/X11R6/include/openssl.framework/Headers/ssl.h"
-      - "/usr/X11R6/include/openssl.framework/Headers/ssl.h"
-      - "/usr/X11R6/openssl.framework/Headers/ssl.h"
-      - "/usr/pkg/include/include/openssl.framework/Headers/ssl.h"
-      - "/usr/pkg/include/openssl.framework/Headers/ssl.h"
-      - "/usr/pkg/include/openssl.framework/Headers/ssl.h"
-      - "/usr/pkg/openssl.framework/Headers/ssl.h"
-      - "/opt/include/include/openssl.framework/Headers/ssl.h"
-      - "/opt/include/openssl.framework/Headers/ssl.h"
-      - "/opt/include/openssl.framework/Headers/ssl.h"
-      - "/opt/openssl.framework/Headers/ssl.h"
-      - "/sw/include/include/openssl.framework/Headers/ssl.h"
-      - "/sw/include/openssl.framework/Headers/ssl.h"
-      - "/sw/include/openssl.framework/Headers/ssl.h"
-      - "/sw/openssl.framework/Headers/ssl.h"
-      - "/opt/local/include/include/openssl.framework/Headers/ssl.h"
-      - "/opt/local/include/openssl.framework/Headers/ssl.h"
-      - "/opt/local/include/openssl.framework/Headers/ssl.h"
-      - "/opt/local/openssl.framework/Headers/ssl.h"
-      - "/usr/include/X11/include/openssl.framework/Headers/ssl.h"
-      - "/usr/include/X11/openssl.framework/Headers/ssl.h"
-      - "/Users/veljko/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Users/veljko/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/Network/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/Network/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/System/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
-      - "/System/Library/Frameworks/openssl.framework/Headers/ssl.h"
-      - "/opt/homebrew/include/include/openssl/ssl.h"
-    found: "/opt/homebrew/include/"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/opt/homebrew"
-      ENV{PATH}:
-        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
-        - "/opt/homebrew/bin"
-        - "/opt/homebrew/sbin"
-        - "/usr/local/bin"
-        - "/System/Cryptexes/App/usr/bin"
-        - "/usr/bin"
-        - "/bin"
-        - "/usr/sbin"
-        - "/sbin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
-        - "/opt/pmk/env/global/bin"
-        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-        - "/sw"
-        - "/opt/local"
-      CMAKE_SYSTEM_INCLUDE_PATH:
-        - "/usr/include/X11"
-      CMAKE_SYSTEM_FRAMEWORK_PATH:
-        - "~/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Frameworks"
-        - "/Network/Library/Frameworks"
-        - "/System/Library/Frameworks"
-  -
-    kind: "find-v1"
-    backtrace:
-      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:628 (find_library)"
-      - "CMakeLists.txt:8 (find_package)"
-    mode: "library"
-    variable: "OPENSSL_SSL_LIBRARY"
-    description: "Path to a library."
-    settings:
-      SearchFramework: "FIRST"
-      SearchAppBundle: "FIRST"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "ssl"
-      - "ssleay32"
-      - "ssleay32MD"
-    candidate_directories:
-      - "/opt/homebrew/lib/"
-      - "/opt/homebrew/lib/"
-      - "/opt/homebrew/"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
-      - "/opt/homebrew/bin/"
-      - "/opt/homebrew/sbin/"
-      - "/usr/local/bin/"
-      - "/System/Cryptexes/App/usr/bin/"
-      - "/usr/bin/"
-      - "/bin/"
-      - "/usr/sbin/"
-      - "/sbin/"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
-      - "/usr/local/"
-      - "/usr/lib/"
-      - "/usr/lib/"
-      - "/usr/"
-      - "/opt/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
-      - "/Library/Frameworks/"
-      - "/System/Library/Frameworks/"
-    found: "/opt/homebrew/lib/libssl.dylib"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/opt/homebrew"
-      ENV{PATH}:
-        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
-        - "/opt/homebrew/bin"
-        - "/opt/homebrew/sbin"
-        - "/usr/local/bin"
-        - "/System/Cryptexes/App/usr/bin"
-        - "/usr/bin"
-        - "/bin"
-        - "/usr/sbin"
-        - "/sbin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
-        - "/opt/pmk/env/global/bin"
-        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-        - "/sw"
-        - "/opt/local"
-      CMAKE_SYSTEM_LIBRARY_PATH:
-        - "/usr/lib/X11"
-      CMAKE_SYSTEM_FRAMEWORK_PATH:
-        - "~/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Frameworks"
-        - "/Network/Library/Frameworks"
-        - "/System/Library/Frameworks"
-  -
-    kind: "find-v1"
-    backtrace:
-      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:642 (find_library)"
-      - "CMakeLists.txt:8 (find_package)"
-    mode: "library"
-    variable: "OPENSSL_CRYPTO_LIBRARY"
-    description: "Path to a library."
-    settings:
-      SearchFramework: "FIRST"
-      SearchAppBundle: "FIRST"
-      CMAKE_FIND_USE_CMAKE_PATH: true
-      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-      CMAKE_FIND_USE_INSTALL_PREFIX: true
-    names:
-      - "crypto"
-    candidate_directories:
-      - "/opt/homebrew/lib/"
-      - "/opt/homebrew/lib/"
-      - "/opt/homebrew/"
-      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
-      - "/opt/homebrew/bin/"
-      - "/opt/homebrew/sbin/"
-      - "/usr/local/bin/"
-      - "/System/Cryptexes/App/usr/bin/"
-      - "/usr/bin/"
-      - "/bin/"
-      - "/usr/sbin/"
-      - "/sbin/"
-      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
-      - "/usr/local/"
-      - "/usr/lib/"
-      - "/usr/lib/"
-      - "/usr/"
-      - "/opt/"
-      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
-      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
-      - "/Library/Frameworks/"
-      - "/System/Library/Frameworks/"
-    found: "/opt/homebrew/lib/libcrypto.dylib"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/opt/homebrew"
-      ENV{PATH}:
-        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
-        - "/opt/homebrew/bin"
-        - "/opt/homebrew/sbin"
-        - "/usr/local/bin"
-        - "/System/Cryptexes/App/usr/bin"
-        - "/usr/bin"
-        - "/bin"
-        - "/usr/sbin"
-        - "/sbin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
-        - "/opt/pmk/env/global/bin"
-        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-        - "/sw"
-        - "/opt/local"
-      CMAKE_SYSTEM_LIBRARY_PATH:
-        - "/usr/lib/X11"
-      CMAKE_SYSTEM_FRAMEWORK_PATH:
-        - "~/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Frameworks"
-        - "/Network/Library/Frameworks"
-        - "/System/Library/Frameworks"
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
-      - "/opt/homebrew/share/cmake/Modules/CheckCSourceCompiles.cmake:103 (cmake_check_source_compiles)"
-      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:160 (check_c_source_compiles)"
-      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:226 (_threads_check_libc)"
-      - "CMakeLists.txt:9 (find_package)"
-    checks:
-      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
-    directories:
-      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-7II9GD"
-      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-7II9GD"
-    cmakeVariables:
-      CMAKE_CXX_STDLIB_MODULES_JSON: ""
-      CMAKE_C_FLAGS: ""
-      CMAKE_C_FLAGS_DEBUG: "-g"
-      CMAKE_EXE_LINKER_FLAGS: ""
-      CMAKE_OSX_ARCHITECTURES: ""
-      CMAKE_OSX_DEPLOYMENT_TARGET: ""
-      CMAKE_OSX_SYSROOT: ""
-    buildResult:
-      variable: "CMAKE_HAVE_LIBC_PTHREAD"
-      cached: true
-      stdout: |
-        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-7II9GD'
-        
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_6a176/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_6a176.dir/build.make CMakeFiles/cmTC_6a176.dir/build
-        Building C object CMakeFiles/cmTC_6a176.dir/src.c.o
-        /usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -arch arm64 -MD -MT CMakeFiles/cmTC_6a176.dir/src.c.o -MF CMakeFiles/cmTC_6a176.dir/src.c.o.d -o CMakeFiles/cmTC_6a176.dir/src.c.o -c /Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-7II9GD/src.c
-        Linking C executable cmTC_6a176
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_6a176.dir/link.txt --verbose=1
-        /usr/bin/cc  -arch arm64 CMakeFiles/cmTC_6a176.dir/src.c.o -o cmTC_6a176
-        
-      exitCode: 0
-  -
-    kind: "find_package-v1"
-    backtrace:
-      - "CMakeLists.txt:10 (find_package)"
-    name: "simdjson"
-    configs:
-      -
-        filename: "simdjson.cps"
-        kind: "cps"
-      -
-        filename: "simdjsonConfig.cmake"
-        kind: "cmake"
-      -
-        filename: "simdjson-config.cmake"
-        kind: "cmake"
-    version_request:
-      exact: false
-    settings:
-      required: "required_explicit"
-      quiet: false
-      global: false
-      policy_scope: true
-      bypass_provider: false
-      names:
-        - "simdjson"
-      path_suffixes:
-        - ""
-      paths:
-        CMAKE_FIND_USE_CMAKE_PATH: true
-        CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
-        CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
-        CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
-        CMAKE_FIND_USE_INSTALL_PREFIX: true
-        CMAKE_FIND_USE_PACKAGE_ROOT_PATH: true
-        CMAKE_FIND_USE_CMAKE_PACKAGE_REGISTRY: true
-        CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY: true
-        CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
-    candidates:
-      -
-        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/simdjsonConfig.cmake"
-        mode: "config"
-        reason: "no_exist"
-      -
-        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/simdjson-config.cmake"
-        mode: "config"
-        reason: "no_exist"
-      -
-        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/lib64/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/lib/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/share/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/simdjsonConfig.cmake"
-        mode: "config"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/simdjson-config.cmake"
-        mode: "config"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/lib64/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/lib/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/share/cps/simdjson.cps"
-        mode: "cps"
-        reason: "no_exist"
-      -
-        path: "/opt/homebrew/lib/cmake/simdjson/simdjsonConfig.cmake"
-        mode: "config"
-        reason: "no_exist"
-    found:
-      path: "/opt/homebrew/lib/cmake/simdjson/simdjson-config.cmake"
-      mode: "config"
-      version: "4.6.1"
-    search_context:
-      CMAKE_PREFIX_PATH:
-        - "/opt/homebrew"
-      ENV{PATH}:
-        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
-        - "/opt/homebrew/bin"
-        - "/opt/homebrew/sbin"
-        - "/usr/local/bin"
-        - "/System/Cryptexes/App/usr/bin"
-        - "/usr/bin"
-        - "/bin"
-        - "/usr/sbin"
-        - "/sbin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
-        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
-        - "/opt/pmk/env/global/bin"
-        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
-      CMAKE_INSTALL_PREFIX: "/usr/local"
-      CMAKE_SYSTEM_PREFIX_PATH:
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr"
-        - "/"
-        - "/opt/homebrew"
-        - "/usr/local"
-        - "/usr/X11R6"
-        - "/usr/pkg"
-        - "/opt"
-        - "/sw"
-        - "/opt/local"
-      CMAKE_SYSTEM_FRAMEWORK_PATH:
-        - "~/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Developer/CommandLineTools/Library/Frameworks"
-        - "/Library/Frameworks"
-        - "/Network/Library/Frameworks"
-        - "/System/Library/Frameworks"
-...
-
----
-events:
   -
     kind: "find-v1"
     backtrace:
@@ -3294,6 +2561,598 @@ events:
         - "/opt/local"
       CMAKE_SYSTEM_LIBRARY_PATH:
         - "/usr/lib/X11"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:370 (find_path)"
+      - "CMakeLists.txt:8 (find_package)"
+    mode: "path"
+    variable: "OPENSSL_INCLUDE_DIR"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "FIRST"
+      SearchAppBundle: "FIRST"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "openssl/ssl.h"
+    candidate_directories:
+      - "/opt/homebrew/include/include/"
+      - "/opt/homebrew/include/"
+      - "/opt/homebrew/include/"
+      - "/opt/homebrew/"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/include/include/"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/include/"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/include/"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
+      - "/opt/homebrew/bin/include/"
+      - "/opt/homebrew/bin/"
+      - "/opt/homebrew/sbin/include/"
+      - "/opt/homebrew/sbin/"
+      - "/usr/local/bin/include/"
+      - "/usr/local/bin/"
+      - "/System/Cryptexes/App/usr/bin/include/"
+      - "/System/Cryptexes/App/usr/bin/"
+      - "/usr/bin/include/"
+      - "/usr/bin/"
+      - "/bin/include/"
+      - "/bin/"
+      - "/usr/sbin/include/"
+      - "/usr/sbin/"
+      - "/sbin/include/"
+      - "/sbin/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/include/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/include/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/include/"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/"
+      - "/opt/pmk/env/global/bin/include/"
+      - "/opt/pmk/env/global/bin/"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/include/"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/include/"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
+      - "/usr/local/include/include/"
+      - "/usr/local/include/"
+      - "/usr/local/include/"
+      - "/usr/local/"
+      - "/usr/include/include/"
+      - "/usr/include/"
+      - "/usr/include/"
+      - "/usr/"
+      - "/include/include/"
+      - "/include/"
+      - "/usr/X11R6/include/include/"
+      - "/usr/X11R6/include/"
+      - "/usr/X11R6/include/"
+      - "/usr/X11R6/"
+      - "/usr/pkg/include/include/"
+      - "/usr/pkg/include/"
+      - "/usr/pkg/include/"
+      - "/usr/pkg/"
+      - "/opt/include/include/"
+      - "/opt/include/"
+      - "/opt/include/"
+      - "/opt/"
+      - "/sw/include/include/"
+      - "/sw/include/"
+      - "/sw/include/"
+      - "/sw/"
+      - "/opt/local/include/include/"
+      - "/opt/local/include/"
+      - "/opt/local/include/"
+      - "/opt/local/"
+      - "/usr/include/X11/include/"
+      - "/usr/include/X11/"
+      - "/Users/veljko/Library/Frameworks/include/"
+      - "/Users/veljko/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/include/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/include/"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
+      - "/Library/Frameworks/include/"
+      - "/Library/Frameworks/"
+      - "/Network/Library/Frameworks/include/"
+      - "/Network/Library/Frameworks/"
+      - "/System/Library/Frameworks/include/"
+      - "/System/Library/Frameworks/"
+    searched_directories:
+      - "/opt/homebrew/include/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/include/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/bin/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/bin/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/sbin/include/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/sbin/openssl.framework/Headers/ssl.h"
+      - "/usr/local/bin/include/openssl.framework/Headers/ssl.h"
+      - "/usr/local/bin/openssl.framework/Headers/ssl.h"
+      - "/System/Cryptexes/App/usr/bin/include/openssl.framework/Headers/ssl.h"
+      - "/System/Cryptexes/App/usr/bin/openssl.framework/Headers/ssl.h"
+      - "/usr/bin/include/openssl.framework/Headers/ssl.h"
+      - "/usr/bin/openssl.framework/Headers/ssl.h"
+      - "/bin/include/openssl.framework/Headers/ssl.h"
+      - "/bin/openssl.framework/Headers/ssl.h"
+      - "/usr/sbin/include/openssl.framework/Headers/ssl.h"
+      - "/usr/sbin/openssl.framework/Headers/ssl.h"
+      - "/sbin/include/openssl.framework/Headers/ssl.h"
+      - "/sbin/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/include/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/include/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/include/openssl.framework/Headers/ssl.h"
+      - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin/openssl.framework/Headers/ssl.h"
+      - "/opt/pmk/env/global/bin/include/openssl.framework/Headers/ssl.h"
+      - "/opt/pmk/env/global/bin/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/include/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/include/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/openssl.framework/Headers/ssl.h"
+      - "/usr/local/include/include/openssl.framework/Headers/ssl.h"
+      - "/usr/local/include/openssl.framework/Headers/ssl.h"
+      - "/usr/local/include/openssl.framework/Headers/ssl.h"
+      - "/usr/local/openssl.framework/Headers/ssl.h"
+      - "/usr/include/include/openssl.framework/Headers/ssl.h"
+      - "/usr/include/openssl.framework/Headers/ssl.h"
+      - "/usr/include/openssl.framework/Headers/ssl.h"
+      - "/usr/openssl.framework/Headers/ssl.h"
+      - "/include/include/openssl.framework/Headers/ssl.h"
+      - "/include/openssl.framework/Headers/ssl.h"
+      - "/usr/X11R6/include/include/openssl.framework/Headers/ssl.h"
+      - "/usr/X11R6/include/openssl.framework/Headers/ssl.h"
+      - "/usr/X11R6/include/openssl.framework/Headers/ssl.h"
+      - "/usr/X11R6/openssl.framework/Headers/ssl.h"
+      - "/usr/pkg/include/include/openssl.framework/Headers/ssl.h"
+      - "/usr/pkg/include/openssl.framework/Headers/ssl.h"
+      - "/usr/pkg/include/openssl.framework/Headers/ssl.h"
+      - "/usr/pkg/openssl.framework/Headers/ssl.h"
+      - "/opt/include/include/openssl.framework/Headers/ssl.h"
+      - "/opt/include/openssl.framework/Headers/ssl.h"
+      - "/opt/include/openssl.framework/Headers/ssl.h"
+      - "/opt/openssl.framework/Headers/ssl.h"
+      - "/sw/include/include/openssl.framework/Headers/ssl.h"
+      - "/sw/include/openssl.framework/Headers/ssl.h"
+      - "/sw/include/openssl.framework/Headers/ssl.h"
+      - "/sw/openssl.framework/Headers/ssl.h"
+      - "/opt/local/include/include/openssl.framework/Headers/ssl.h"
+      - "/opt/local/include/openssl.framework/Headers/ssl.h"
+      - "/opt/local/include/openssl.framework/Headers/ssl.h"
+      - "/opt/local/openssl.framework/Headers/ssl.h"
+      - "/usr/include/X11/include/openssl.framework/Headers/ssl.h"
+      - "/usr/include/X11/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Users/veljko/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/Network/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/Network/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/System/Library/Frameworks/include/openssl.framework/Headers/ssl.h"
+      - "/System/Library/Frameworks/openssl.framework/Headers/ssl.h"
+      - "/opt/homebrew/include/include/openssl/ssl.h"
+    found: "/opt/homebrew/include/"
+    search_context:
+      CMAKE_PREFIX_PATH:
+        - "/opt/homebrew"
+      ENV{PATH}:
+        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/opt/pmk/env/global/bin"
+        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_INCLUDE_PATH:
+        - "/usr/include/X11"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:628 (find_library)"
+      - "CMakeLists.txt:8 (find_package)"
+    mode: "library"
+    variable: "OPENSSL_SSL_LIBRARY"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "FIRST"
+      SearchAppBundle: "FIRST"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ssl"
+      - "ssleay32"
+      - "ssleay32MD"
+    candidate_directories:
+      - "/opt/homebrew/lib/"
+      - "/opt/homebrew/lib/"
+      - "/opt/homebrew/"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/lib/"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
+      - "/opt/homebrew/bin/"
+      - "/opt/homebrew/sbin/"
+      - "/usr/local/bin/"
+      - "/System/Cryptexes/App/usr/bin/"
+      - "/usr/bin/"
+      - "/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
+      - "/usr/local/"
+      - "/usr/lib/"
+      - "/usr/lib/"
+      - "/usr/"
+      - "/opt/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
+      - "/Library/Frameworks/"
+      - "/System/Library/Frameworks/"
+    found: "/opt/homebrew/lib/libssl.dylib"
+    search_context:
+      CMAKE_PREFIX_PATH:
+        - "/opt/homebrew"
+      ENV{PATH}:
+        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/opt/pmk/env/global/bin"
+        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/FindOpenSSL.cmake:642 (find_library)"
+      - "CMakeLists.txt:8 (find_package)"
+    mode: "library"
+    variable: "OPENSSL_CRYPTO_LIBRARY"
+    description: "Path to a library."
+    settings:
+      SearchFramework: "FIRST"
+      SearchAppBundle: "FIRST"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "crypto"
+    candidate_directories:
+      - "/opt/homebrew/lib/"
+      - "/opt/homebrew/lib/"
+      - "/opt/homebrew/"
+      - "/opt/homebrew/Cellar/openssl@3/3.6.3/lib/"
+      - "/Library/Frameworks/Python.framework/Versions/3.13/bin/"
+      - "/opt/homebrew/bin/"
+      - "/opt/homebrew/sbin/"
+      - "/usr/local/bin/"
+      - "/System/Cryptexes/App/usr/bin/"
+      - "/usr/bin/"
+      - "/bin/"
+      - "/usr/sbin/"
+      - "/sbin/"
+      - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/"
+      - "/usr/local/"
+      - "/usr/lib/"
+      - "/usr/lib/"
+      - "/usr/"
+      - "/opt/"
+      - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks/"
+      - "/Library/Developer/CommandLineTools/Library/Frameworks/"
+      - "/Library/Frameworks/"
+      - "/System/Library/Frameworks/"
+    found: "/opt/homebrew/lib/libcrypto.dylib"
+    search_context:
+      CMAKE_PREFIX_PATH:
+        - "/opt/homebrew"
+      ENV{PATH}:
+        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/opt/pmk/env/global/bin"
+        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
+      CMAKE_SYSTEM_LIBRARY_PATH:
+        - "/usr/lib/X11"
+      CMAKE_SYSTEM_FRAMEWORK_PATH:
+        - "~/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Network/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Developer/CommandLineTools/Library/Frameworks"
+        - "/Library/Frameworks"
+        - "/Network/Library/Frameworks"
+        - "/System/Library/Frameworks"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/CheckCSourceCompiles.cmake:103 (cmake_check_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:160 (check_c_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:226 (_threads_check_libc)"
+      - "CMakeLists.txt:9 (find_package)"
+    checks:
+      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
+    directories:
+      source: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-qDOfaF"
+      binary: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-qDOfaF"
+    cmakeVariables:
+      CMAKE_CXX_STDLIB_MODULES_JSON: ""
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-qDOfaF'
+        
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_37fab/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_37fab.dir/build.make CMakeFiles/cmTC_37fab.dir/build
+        Building C object CMakeFiles/cmTC_37fab.dir/src.c.o
+        /usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -arch arm64 -MD -MT CMakeFiles/cmTC_37fab.dir/src.c.o -MF CMakeFiles/cmTC_37fab.dir/src.c.o.d -o CMakeFiles/cmTC_37fab.dir/src.c.o -c /Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/CMakeScratch/TryCompile-qDOfaF/src.c
+        Linking C executable cmTC_37fab
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_37fab.dir/link.txt --verbose=1
+        /usr/bin/cc  -arch arm64 CMakeFiles/cmTC_37fab.dir/src.c.o -o cmTC_37fab
+        
+      exitCode: 0
+  -
+    kind: "find_package-v1"
+    backtrace:
+      - "CMakeLists.txt:10 (find_package)"
+    name: "simdjson"
+    configs:
+      -
+        filename: "simdjson.cps"
+        kind: "cps"
+      -
+        filename: "simdjsonConfig.cmake"
+        kind: "cmake"
+      -
+        filename: "simdjson-config.cmake"
+        kind: "cmake"
+    version_request:
+      exact: false
+    settings:
+      required: "required_explicit"
+      quiet: false
+      global: false
+      policy_scope: true
+      bypass_provider: false
+      names:
+        - "simdjson"
+      path_suffixes:
+        - ""
+      paths:
+        CMAKE_FIND_USE_CMAKE_PATH: true
+        CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+        CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+        CMAKE_FIND_USE_INSTALL_PREFIX: true
+        CMAKE_FIND_USE_PACKAGE_ROOT_PATH: true
+        CMAKE_FIND_USE_CMAKE_PACKAGE_REGISTRY: true
+        CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY: true
+        CMAKE_FIND_ROOT_PATH_MODE: "BOTH"
+    candidates:
+      -
+        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/simdjsonConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/simdjson-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/lib64/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/lib/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/Users/veljko/Desktop/zore-core-v1/build/CMakeFiles/pkgRedirects/share/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/simdjsonConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/simdjson-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/lib64/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/lib/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/share/cps/simdjson.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/opt/homebrew/lib/cmake/simdjson/simdjsonConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+    found:
+      path: "/opt/homebrew/lib/cmake/simdjson/simdjson-config.cmake"
+      mode: "config"
+      version: "4.6.1"
+    search_context:
+      CMAKE_PREFIX_PATH:
+        - "/opt/homebrew"
+      ENV{PATH}:
+        - "/Library/Frameworks/Python.framework/Versions/3.13/bin"
+        - "/opt/homebrew/bin"
+        - "/opt/homebrew/sbin"
+        - "/usr/local/bin"
+        - "/System/Cryptexes/App/usr/bin"
+        - "/usr/bin"
+        - "/bin"
+        - "/usr/sbin"
+        - "/sbin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin"
+        - "/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin"
+        - "/opt/pmk/env/global/bin"
+        - "/Users/veljko/Library/Application Support/JetBrains/Toolbox/scripts"
+        - "/Users/veljko/Library/Application Support/Claude/local-agent-mode-sessions/skills-plugin/4e16839d-3832-43e3-9f6e-558ea4b01944/5445a3a9-8c0b-4a7f-8248-04695588d80e/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr"
+        - "/"
+        - "/opt/homebrew"
+        - "/usr/local"
+        - "/usr/X11R6"
+        - "/usr/pkg"
+        - "/opt"
+        - "/sw"
+        - "/opt/local"
       CMAKE_SYSTEM_FRAMEWORK_PATH:
         - "~/Library/Frameworks"
         - "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"

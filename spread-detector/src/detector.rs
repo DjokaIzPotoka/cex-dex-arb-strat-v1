@@ -32,6 +32,56 @@ pub fn is_stale(now_us: u64, data_ts_us: u64, max_age_ms: u64) -> bool {
     age_us > max_age_ms.saturating_mul(1000)
 }
 
+/// How interesting a given spread reading is. `Watching` is not logged
+/// at all (too noisy at typical tick rates); `Interesting` and
+/// `Opportunity` both get logged and recorded to CSV, but only
+/// `Opportunity` gets sized and shown in the opportunity box.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpreadStatus {
+    /// gross_spread <= the configured MIN_LOG_GROSS_SPREAD threshold.
+    Watching,
+    /// gross_spread above threshold, but net_spread (after costs)
+    /// isn't -- worth recording for later distribution analysis, not
+    /// worth sizing a trade for.
+    Interesting,
+    /// net_spread > the configured MIN_NET_SPREAD_PCT threshold --
+    /// profitable after costs, before accounting for price impact
+    /// (sizing in main.rs may still reduce this to nothing).
+    Opportunity,
+}
+
+impl SpreadStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            SpreadStatus::Watching => "WATCHING",
+            SpreadStatus::Interesting => "INTERESTING",
+            SpreadStatus::Opportunity => "OPPORTUNITY",
+        }
+    }
+}
+
+/// Classifies a spread reading. Opportunity is checked first even
+/// though it implies gross_spread is also above the (much smaller)
+/// Interesting threshold: net_spread = gross_spread - costs, so
+/// net_spread > 0 already means gross_spread > costs, and costs
+/// (0.425%) is always well above a sane min_log_gross_spread (e.g.
+/// 0.05%) -- checking order here doesn't change behavior, just avoids
+/// a redundant comparison.
+pub fn classify_spread(
+    gross_spread: f64,
+    net_spread: f64,
+    min_log_gross_spread: f64,
+    min_net_spread: f64,
+) -> SpreadStatus {
+    if net_spread > min_net_spread {
+        SpreadStatus::Opportunity
+    } else if gross_spread > min_log_gross_spread {
+        SpreadStatus::Interesting
+    } else {
+        SpreadStatus::Watching
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,5 +121,49 @@ mod tests {
     fn staleness_handles_clock_skew_without_underflow() {
         // data_ts_us slightly ahead of now_us shouldn't panic or wrap.
         assert!(!is_stale(1000, 1050, 500));
+    }
+
+    const MIN_LOG_GROSS: f64 = 0.0005; // 0.05%
+    const MIN_NET: f64 = 0.0; // 0.0%
+
+    #[test]
+    fn classify_watching_when_gross_at_or_below_threshold() {
+        assert_eq!(
+            classify_spread(0.0004, -0.0038, MIN_LOG_GROSS, MIN_NET),
+            SpreadStatus::Watching
+        );
+        // Exactly at the threshold is still Watching (spec: "> 0.05%").
+        assert_eq!(
+            classify_spread(MIN_LOG_GROSS, MIN_LOG_GROSS - 0.00425, MIN_LOG_GROSS, MIN_NET),
+            SpreadStatus::Watching
+        );
+    }
+
+    #[test]
+    fn classify_interesting_when_gross_above_but_net_not_positive() {
+        // gross=0.20% (above 0.05%), net = 0.20% - 0.425% = -0.225%
+        assert_eq!(
+            classify_spread(0.0020, -0.00225, MIN_LOG_GROSS, MIN_NET),
+            SpreadStatus::Interesting
+        );
+    }
+
+    #[test]
+    fn classify_opportunity_when_net_positive() {
+        // gross=0.60%, net = 0.60% - 0.425% = +0.175%
+        assert_eq!(
+            classify_spread(0.0060, 0.00175, MIN_LOG_GROSS, MIN_NET),
+            SpreadStatus::Opportunity
+        );
+    }
+
+    #[test]
+    fn classify_respects_configured_thresholds() {
+        // A custom, wider MIN_LOG_GROSS_SPREAD should reclassify a
+        // reading that would otherwise be Interesting as Watching.
+        assert_eq!(
+            classify_spread(0.0020, -0.00225, 0.0030, MIN_NET),
+            SpreadStatus::Watching
+        );
     }
 }

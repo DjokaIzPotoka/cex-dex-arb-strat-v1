@@ -1,24 +1,49 @@
 # ZORA
 
-CEX-DEX arbitrage bot for SOL/USDC. Two ingestors publish live prices
-into POSIX shared memory for a downstream spread detector to consume:
+CEX-DEX arbitrage bot for SOL/USDC. Three processes work together:
 
 - **CEX ingestor** (`src/`, C++): Binance `solusdc@bookTicker` via
-  WebSocket → `/zora_cex_price`
+  WebSocket → shared memory at `/zora_cex_price`
 - **DEX ingestor** (`ingestor-dex-solana/`): Raydium SOL/USDC pool via
-  Solana RPC polling → `/zora_dex_price`
+  Solana RPC polling → shared memory at `/zora_dex_price`
+- **Spread detector** (`spread-detector/`): reads both shared memory
+  segments, detects profitable CEX-DEX spreads, and records them to
+  `data/paper_trades.csv` (paper trading only -- no real orders)
 
-## Running both together
+## Quick start
 
 ```
-make build   # build both binaries (release)
-make run     # start both in the background, with auto-restart on crash
-make status  # check whether each process is running, and its PID
-make logs    # follow combined [CEX]/[DEX]-prefixed output
-make stop    # stop both cleanly (SIGTERM, so shared memory gets unlinked)
-make clean   # remove build artifacts for both
+make build
+make start
 ```
 
-`make run` builds either binary first if it isn't already built. If
-either ingestor crashes, it's automatically restarted (up to 5 times);
-after that, both are stopped.
+`make start` launches CEX and DEX in the background (logging to
+`/tmp/zora_cex.log` / `/tmp/zora_dex.log`) and the spread detector
+full-screen in a tmux session, then attaches you to it. The spread
+detector's live output is what you're looking at; `Ctrl+B 1` / `Ctrl+B 2`
+switch to the CEX/DEX log windows, `Ctrl+B 0` switches back, and
+`Ctrl+B [` enters scroll mode.
+
+To stop:
+
+```
+make stop
+```
+
+Sends SIGTERM to all three processes (so CEX/DEX clean up their shared
+memory segments), waits up to 3s, force-kills anything still running,
+and tears down the tmux session.
+
+To check logs:
+
+```
+make logs
+```
+
+Prompts for CEX, DEX, or SPR (SPR just re-attaches to the live tmux
+session) -- useful when you don't want to attach/detach from tmux for a
+quick look.
+
+Other targets: `make attach` (re-attach to an already-running session),
+`make status` (PID/running check for all three), `make rebuild` (clean
++ build).

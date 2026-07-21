@@ -13,23 +13,26 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use anyhow::{bail, Result};
 
-use crate::types::{ZoraDexPrice, ZORA_SHM_DEX_NAME};
+use crate::types::ZoraDexPrice;
 
 pub struct ShmWriter {
     ptr: *mut ZoraDexPrice,
     fd: libc::c_int,
     seq: u32,
+    shm_name: CString,
 }
 
 impl ShmWriter {
-    /// Creates, sizes, and maps the shared memory segment. Must be
-    /// called once at startup, before polling begins.
-    pub fn new() -> Result<Self> {
+    /// Creates, sizes, and maps the shared memory segment named
+    /// `shm_name` (e.g. `types::ZORA_SHM_DEX_RAY_NAME`). One instance
+    /// per trading pair. Must be called once at startup, before
+    /// polling begins.
+    pub fn new(shm_name: &str) -> Result<Self> {
         // CString::new only fails if the name contains an interior NUL
-        // byte, which can't happen for our fixed, hardcoded constant --
+        // byte, which can't happen for our fixed, hardcoded constants --
         // expect() here is fine per the "only in tests/main setup" rule
         // since this is a startup-time invariant, not a poll-loop path.
-        let name = CString::new(ZORA_SHM_DEX_NAME).expect("shm name has no interior NUL");
+        let name = CString::new(shm_name).expect("shm name has no interior NUL");
         let size = std::mem::size_of::<ZoraDexPrice>();
 
         // SAFETY: `name` is a valid NUL-terminated C string for the
@@ -40,12 +43,36 @@ impl ShmWriter {
             bail!("shm_open failed: {}", std::io::Error::last_os_error());
         }
 
-        // SAFETY: `fd` was just checked valid above.
-        let truncated = unsafe { libc::ftruncate(fd, size as libc::off_t) };
-        if truncated < 0 {
-            let err = std::io::Error::last_os_error();
-            unsafe { libc::close(fd) };
-            bail!("ftruncate failed: {}", err);
+        // On macOS, ftruncate on a POSIX shared memory object can only
+        // succeed once, ever -- calling it again on a segment that
+        // already has a size (e.g. one left behind by a process that
+        // was killed before it could shm_unlink) fails with EINVAL,
+        // even when resizing to the same size. Only truncate when the
+        // existing segment is too small for what we need; a
+        // pre-existing, already-correctly-sized segment (the common
+        // case after an unclean shutdown) is reused as-is. Linux has
+        // no such restriction, so this check is a no-op cost there.
+        //
+        // SAFETY: `fd` was just checked valid above; `stat_buf` is
+        // zero-initialized and fully populated by fstat before we read
+        // any field of it.
+        let needs_truncate = unsafe {
+            let mut stat_buf: libc::stat = std::mem::zeroed();
+            if libc::fstat(fd, &mut stat_buf) == -1 {
+                true
+            } else {
+                (stat_buf.st_size as usize) < size
+            }
+        };
+
+        if needs_truncate {
+            // SAFETY: `fd` was just checked valid above.
+            let truncated = unsafe { libc::ftruncate(fd, size as libc::off_t) };
+            if truncated < 0 {
+                let err = std::io::Error::last_os_error();
+                unsafe { libc::close(fd) };
+                bail!("ftruncate failed: {}", err);
+            }
         }
 
         // SAFETY: `fd` is a valid, correctly-sized shared memory file
@@ -75,7 +102,7 @@ impl ShmWriter {
         // before treating it as a `ZoraDexPrice`.
         unsafe { std::ptr::write_bytes(ptr as *mut u8, 0, size) };
 
-        Ok(Self { ptr, fd, seq: 0 })
+        Ok(Self { ptr, fd, seq: 0, shm_name: name })
     }
 
     /// Hot path: writes the payload fields, then publishes the update
@@ -138,11 +165,11 @@ impl Drop for ShmWriter {
             libc::close(self.fd);
         }
 
-        if let Ok(name) = CString::new(ZORA_SHM_DEX_NAME) {
-            // SAFETY: `name` is a valid NUL-terminated C string.
-            unsafe {
-                libc::shm_unlink(name.as_ptr());
-            }
+        // SAFETY: `self.shm_name` is a valid NUL-terminated C string,
+        // stored at construction time specifically so shutdown can
+        // unlink the same name the segment was created with.
+        unsafe {
+            libc::shm_unlink(self.shm_name.as_ptr());
         }
     }
 }

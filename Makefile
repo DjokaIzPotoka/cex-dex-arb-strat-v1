@@ -1,12 +1,13 @@
-.PHONY: build run stop status logs clean
+.PHONY: build rebuild start stop attach logs status clean
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
 
 CEX_PID_FILE := /tmp/zora_cex.pid
 DEX_PID_FILE := /tmp/zora_dex.pid
-SUPERVISOR_PID_FILE := /tmp/zora_supervisor.pid
-LOG_FILE := /tmp/zora.log
+SPR_PID_FILE := /tmp/zora_spr.pid
+CEX_LOG := /tmp/zora_cex.log
+DEX_LOG := /tmp/zora_dex.log
 
 build:
 	@echo "Building CEX ingestor (C++, release)..."
@@ -22,31 +23,42 @@ build:
 	@echo "Building spread detector (Rust, release)..."
 	@cargo build --release --manifest-path spread-detector/Cargo.toml
 
-run:
-	@nohup bash "$(CURDIR)/scripts/start.sh" >/dev/null 2>&1 &
-	@sleep 1
-	@echo "ZORA starting in the background (a fresh build can take a minute)."
-	@echo "Use 'make logs' to follow progress, 'make status' to check, 'make stop' to stop."
+rebuild: clean build
+
+start:
+	@bash "$(CURDIR)/scripts/zora.sh"
 
 stop:
 	@bash "$(CURDIR)/scripts/stop.sh"
+
+attach:
+	@tmux attach -t zora
+
+logs:
+	@echo "ZORA logs:"; \
+	echo "  1) CEX  ($(CEX_LOG))"; \
+	echo "  2) DEX  ($(DEX_LOG))"; \
+	echo "  3) SPR  (attach to the live tmux session)"; \
+	read -p "Select: " choice; \
+	case "$$choice" in \
+		1) tail -f $(CEX_LOG) ;; \
+		2) tail -f $(DEX_LOG) ;; \
+		3) tmux attach -t zora ;; \
+		*) echo "Cancelled." ;; \
+	esac
 
 status:
 	@echo "--- ZORA status ---"; \
 	check() { \
 		if [ -f "$$2" ] && kill -0 "$$(cat $$2)" 2>/dev/null; then \
-			printf "%-12s running (PID %s)\n" "$$1" "$$(cat $$2)"; \
+			printf "%-6s running (PID %s)\n" "$$1" "$$(cat $$2)"; \
 		else \
-			printf "%-12s not running\n" "$$1"; \
+			printf "%-6s not running\n" "$$1"; \
 		fi; \
 	}; \
-	check "Supervisor:" "$(SUPERVISOR_PID_FILE)"; \
 	check "CEX:" "$(CEX_PID_FILE)"; \
-	check "DEX:" "$(DEX_PID_FILE)"
-
-logs:
-	@touch $(LOG_FILE)
-	@tail -f $(LOG_FILE)
+	check "DEX:" "$(DEX_PID_FILE)"; \
+	check "SPR:" "$(SPR_PID_FILE)"
 
 clean:
 	@echo "Cleaning C++ build artifacts..."

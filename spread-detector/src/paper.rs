@@ -32,6 +32,7 @@ impl PaperLogger {
         if !file_exists {
             writer.write_record([
                 "timestamp",
+                "pair",
                 "cex_bid",
                 "dex_price",
                 "gross_spread_pct",
@@ -55,8 +56,13 @@ impl PaperLogger {
     pub fn log(&mut self, opp: &Opportunity) -> Result<()> {
         self.writer.write_record(&[
             opp.detected_at_us.to_string(),
-            format!("{:.4}", opp.cex_bid),
-            format!("{:.4}", opp.dex_price),
+            opp.pair.to_string(),
+            // 8 decimals, not 4: BONK/USDC's price (~0.0000031) needs it --
+            // 4 decimals would silently record every BONK row as "0.0000",
+            // making the CSV useless for that pair. Harmless for the
+            // larger-priced pairs (SOL/RAY/ETH), just more trailing digits.
+            format!("{:.8}", opp.cex_bid),
+            format!("{:.8}", opp.dex_price),
             format!("{:.4}", opp.gross_spread * 100.0),
             format!("{:.4}", opp.net_spread * 100.0),
             format!("{:.2}", opp.optimal_size_usdc),
@@ -78,6 +84,7 @@ mod tests {
 
     fn sample_opportunity() -> Opportunity {
         Opportunity {
+            pair: "SOL/USDC",
             cex_bid: 76.802,
             dex_price: 76.650,
             gross_spread: 0.00198,
@@ -114,9 +121,10 @@ mod tests {
         let contents = std::fs::read_to_string(&path).unwrap();
         let lines: Vec<&str> = contents.lines().collect();
         assert_eq!(lines.len(), 3, "expected 1 header + 2 rows, got: {contents}");
-        assert!(lines[0].starts_with("timestamp,cex_bid,dex_price"));
+        assert!(lines[0].starts_with("timestamp,pair,cex_bid,dex_price"));
+        assert!(lines[1].contains("SOL/USDC"));
         assert!(lines[1].contains("BUY_DEX_SELL_CEX"));
-        assert!(lines[1].contains("76.8020")); // cex_bid formatted to 4 decimals
+        assert!(lines[1].contains("76.80200000")); // cex_bid formatted to 8 decimals
 
         std::fs::remove_dir_all(&dir).ok();
     }

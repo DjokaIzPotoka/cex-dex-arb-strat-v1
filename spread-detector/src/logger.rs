@@ -145,8 +145,13 @@ fn format_opportunity_box(
     let w = OPPORTUNITY_BOX_WIDTH;
     let lines = [
         "OPPORTUNITY DETECTED".to_string(),
-        format!("CEX bid:    {:.3}", cex_bid),
-        format!("DEX price:  {:.3}", dex_price),
+        // 8 decimals, not 3: BONK/USDC's price (~0.0000031) needs it --
+        // 3 decimals would print "0.000" here. The box's padding is
+        // width-driven (see the loop below), so this doesn't affect
+        // alignment for the larger-priced pairs, just adds trailing
+        // digits.
+        format!("CEX bid:    {:.8}", cex_bid),
+        format!("DEX price:  {:.8}", dex_price),
         format!("Gross:      {:+.3}%", gross_pct),
         format!("Net:        {:+.3}%", net_pct),
     ];

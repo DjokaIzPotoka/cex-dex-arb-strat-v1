@@ -11,18 +11,18 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use anyhow::{bail, Result};
 
-use crate::types::{ZoraCexPrice, ZoraDexPrice, ZORA_SHM_CEX_NAME, ZORA_SHM_DEX_NAME};
+use crate::types::{ZoraCexPrice, ZoraDexPrice};
 
 /// Opens an existing POSIX shared memory segment read-only. Does NOT
 /// create it (no O_CREAT) -- creation is the owning ingestor's job;
 /// this process only ever consumes.
 ///
 /// SAFETY: the returned pointer is valid for `size` bytes for as long
-/// as the mapping is kept (this process never munmaps it -- these
-/// mappings live for the process's whole lifetime, released by the OS
-/// on exit), provided `size` matches the actual struct size the
-/// writer uses. That invariant is enforced by the `size_of` calls at
-/// each call site below, not by this function itself.
+/// as the mapping is kept (nothing here unmaps it -- that's the
+/// caller's responsibility, e.g. `ShmReader::try_reopen` munmapping a
+/// superseded mapping), provided `size` matches the actual struct size
+/// the writer uses. That invariant is enforced by the `size_of` calls
+/// at each call site below, not by this function itself.
 unsafe fn open_existing_readonly(name: &str, size: usize) -> Result<*const u8> {
     let cname = CString::new(name).expect("shm name has no interior NUL");
 
@@ -78,9 +78,12 @@ pub struct ShmReader {
 unsafe impl Send for ShmReader {}
 
 impl ShmReader {
-    /// Attempts to map both segments once. Returns `Err` if either
-    /// doesn't exist yet -- not treated as fatal by the caller, since
-    /// the spread detector may start before either ingestor has.
+    /// Attempts to map both segments for one pair once. `cex_shm_name`/
+    /// `dex_shm_name` let one `ShmReader` instance serve any pair
+    /// (SOL/USDC, RAY/USDC, ...) -- construct one instance per pair.
+    /// Returns `Err` if either segment doesn't exist yet -- not treated
+    /// as fatal by the caller, since the spread detector may start
+    /// before either ingestor has.
     ///
     /// Deliberately a single attempt with no internal retry loop: the
     /// caller (main.rs) owns retrying, so it can race each wait
@@ -90,23 +93,97 @@ impl ShmReader {
     /// had registered any signal handling -- meaning Ctrl+C/SIGTERM
     /// were silently unresponsive for as long as an ingestor hadn't
     /// started yet.
-    pub fn try_open() -> Result<Self> {
+    pub fn try_open(cex_shm_name: &str, dex_shm_name: &str) -> Result<Self> {
         // SAFETY: size matches `size_of::<ZoraCexPrice>()` exactly,
         // which is what makes this mapping valid to later dereference
         // as `*const ZoraCexPrice`.
         let cex_ptr = unsafe {
-            open_existing_readonly(ZORA_SHM_CEX_NAME, std::mem::size_of::<ZoraCexPrice>())?
+            open_existing_readonly(cex_shm_name, std::mem::size_of::<ZoraCexPrice>())?
                 as *const ZoraCexPrice
         };
 
         // SAFETY: same reasoning as the CEX mapping above, sized for
         // `ZoraDexPrice` instead.
         let dex_ptr = unsafe {
-            open_existing_readonly(ZORA_SHM_DEX_NAME, std::mem::size_of::<ZoraDexPrice>())?
+            open_existing_readonly(dex_shm_name, std::mem::size_of::<ZoraDexPrice>())?
                 as *const ZoraDexPrice
         };
 
         Ok(Self { cex_ptr, dex_ptr })
+    }
+
+    /// Re-maps both of this pair's segments by name, for when an
+    /// ingestor has restarted: it `shm_unlink`s its old segment on
+    /// clean shutdown and creates a brand new one under the same name
+    /// on the next startup. `shm_unlink` only removes the *name* --
+    /// this reader's existing mapping (opened against the old
+    /// segment) stays perfectly valid, just frozen, since nothing
+    /// forces us to notice the name now points somewhere else. That's
+    /// exactly the "stale forever" failure this method exists to
+    /// recover from: the caller (main.rs) calls this once staleness
+    /// is actually observed, which re-resolves the name and picks up
+    /// whichever segment currently lives there.
+    ///
+    /// Both new mappings are opened *before* either old one is
+    /// unmapped, and only swapped in once both succeed. Retiring the
+    /// old mappings first and discovering a failure on the second
+    /// `open_existing_readonly` call would otherwise leave this
+    /// `ShmReader` holding a dangling pointer into already-unmapped
+    /// memory -- `read_cex`/`read_dex` would then be reading freed
+    /// memory, not just stale data. On any failure, the existing
+    /// mappings are left completely untouched (still valid, just
+    /// still stale) and the caller is expected to retry later.
+    pub fn try_reopen(&mut self, cex_shm_name: &str, dex_shm_name: &str) -> Result<()> {
+        // SAFETY: same reasoning as `try_open`'s CEX mapping.
+        let new_cex_ptr = unsafe {
+            open_existing_readonly(cex_shm_name, std::mem::size_of::<ZoraCexPrice>())?
+                as *const ZoraCexPrice
+        };
+
+        // SAFETY: same reasoning as `try_open`'s DEX mapping.
+        let new_dex_ptr = match unsafe {
+            open_existing_readonly(dex_shm_name, std::mem::size_of::<ZoraDexPrice>())
+        } {
+            Ok(ptr) => ptr as *const ZoraDexPrice,
+            Err(e) => {
+                // Don't leak the CEX mapping just opened above -- it
+                // was never stored anywhere, so nothing else will
+                // ever unmap it if we don't do it here before bailing.
+                //
+                // SAFETY: `new_cex_ptr` was mapped for
+                // `size_of::<ZoraCexPrice>()` bytes moments ago by the
+                // call above and hasn't been stored or shared anywhere
+                // yet, so it's safe (and necessary) to unmap here.
+                unsafe {
+                    libc::munmap(
+                        new_cex_ptr as *mut libc::c_void,
+                        std::mem::size_of::<ZoraCexPrice>(),
+                    );
+                }
+                return Err(e);
+            }
+        };
+
+        // Both new mappings succeeded -- safe to retire the old ones.
+        //
+        // SAFETY: `self.cex_ptr`/`self.dex_ptr` were mapped for their
+        // respective `size_of` sizes, either in `try_open` or by a
+        // previous `try_reopen` call, and nothing else holds a
+        // reference to them (this method takes `&mut self`).
+        unsafe {
+            libc::munmap(
+                self.cex_ptr as *mut libc::c_void,
+                std::mem::size_of::<ZoraCexPrice>(),
+            );
+            libc::munmap(
+                self.dex_ptr as *mut libc::c_void,
+                std::mem::size_of::<ZoraDexPrice>(),
+            );
+        }
+
+        self.cex_ptr = new_cex_ptr;
+        self.dex_ptr = new_dex_ptr;
+        Ok(())
     }
 
     /// Sequence-lock read: retries until a consistent (untorn)
@@ -126,9 +203,11 @@ impl ShmReader {
     /// complete new publish (fields, then the atomic store) happened
     /// while this read was in progress.
     ///
-    /// SAFETY: `self.cex_ptr` was mapped for `size_of::<ZoraCexPrice>()`
-    /// bytes in `wait_and_open` and is never unmapped before `self`
-    /// drops, so it's valid to dereference for `self`'s whole lifetime.
+    /// SAFETY: `self.cex_ptr` is always either the mapping from
+    /// `try_open` or the most recent successful `try_reopen`, and both
+    /// only ever store a pointer after confirming it maps
+    /// `size_of::<ZoraCexPrice>()` bytes -- so it's valid to
+    /// dereference for as long as `self` holds that particular value.
     pub fn read_cex(&self) -> ZoraCexPrice {
         loop {
             unsafe {
@@ -146,9 +225,8 @@ impl ShmReader {
 
     /// Same pattern as `read_cex`, for the DEX segment.
     ///
-    /// SAFETY: `self.dex_ptr` was mapped for `size_of::<ZoraDexPrice>()`
-    /// bytes in `wait_and_open` and is never unmapped before `self`
-    /// drops.
+    /// SAFETY: same reasoning as `read_cex`, for `self.dex_ptr` /
+    /// `ZoraDexPrice` instead.
     pub fn read_dex(&self) -> ZoraDexPrice {
         loop {
             unsafe {

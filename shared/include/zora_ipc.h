@@ -15,7 +15,11 @@
 #define ZORA_ATOMIC_U32 _Atomic uint32_t
 #endif
 
-#define ZORA_SHM_CEX_NAME "/zora_cex_price"
+#define ZORA_SHM_CEX_NAME "/zora_cex_price"      // SOL/USDC (unchanged)
+#define ZORA_SHM_CEX_RAY_NAME "/zora_cex_ray"    // RAY/USDC
+#define ZORA_SHM_CEX_BONK_NAME "/zora_cex_bonk"  // BONK/USDC
+#define ZORA_SHM_CEX_ZEC_NAME "/zora_cex_zec"    // ZEC/USDC
+#define ZORA_SHM_CEX_UNI_NAME "/zora_cex_uni"    // UNI/USDC
 #define ZORA_SHM_SIZE sizeof(ZoraCexPrice)
 
 typedef struct {
