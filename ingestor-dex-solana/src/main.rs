@@ -14,6 +14,7 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use tokio::signal::unix::{signal, SignalKind};
 
+mod clmm;
 mod logger;
 mod pool;
 mod rpc;
@@ -22,6 +23,7 @@ mod types;
 
 use logger::Level;
 use shm::ShmWriter;
+use solana_sdk::commitment_config::CommitmentConfig;
 
 const POLL_INTERVAL: Duration = Duration::from_millis(400);
 const RPC_WARN_THRESHOLD: Duration = Duration::from_millis(300);
@@ -30,6 +32,152 @@ const RPC_WARN_THRESHOLD: Duration = Duration::from_millis(300);
 // also shutdown (Ctrl+C/SIGTERM are only checked between ticks, never
 // while a fetch is in flight).
 const RPC_TIMEOUT: Duration = Duration::from_secs(2);
+
+// BONK/USDC's CLMM pool -- most of BONK's Raydium liquidity now sits
+// here (~$122k TVL at time of writing) rather than in a Standard AMM
+// v4 pool, so this replaces (not adds to) BONK/USDC's old vault-based
+// PoolConfig entry. See clmm.rs for how the byte offsets below were
+// sourced and verified, and its doc comment for why BONK is mint_0
+// (decimals_a) and USDC is mint_1 (decimals_b) specifically for this
+// pool -- confirmed live, not assumed from token ordering by symbol.
+const BONK_CLMM_POOL_ID: &str = "3UwfrdLTpAjxTRni1boc5HUWe6hzc4HgE5yLdvEp2Noc";
+const BONK_CLMM_PROGRAM_ID: &str = "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK";
+const BONK_CLMM_DECIMALS_A: i32 = 5; // BONK, token_mint_0
+const BONK_CLMM_DECIMALS_B: i32 = 6; // USDC, token_mint_1
+
+/// A CLMM pool this ingestor polls for price only (no reserves/sizing
+/// data -- see the module-level comment on `PoolConfig` for the
+/// Standard-AMM equivalent). Owner-checked against `program_id` on
+/// every fetch: a wrong or migrated pool pubkey would otherwise
+/// misparse an unrelated account's bytes as `PoolState` fields
+/// silently, which is exactly the failure mode this whole feature was
+/// built to avoid.
+struct ClmmPoolConfig {
+    pair_label: &'static str,
+    pool_pubkey: Pubkey,
+    program_id: Pubkey,
+    decimals_a: i32,
+    decimals_b: i32,
+    shm_writer: ShmWriter,
+    connected: bool,
+    retry_count: u32,
+}
+
+/// Fetches and publishes the CLMM pool's current price via a single
+/// getAccountInfo call. Run concurrently with `process_all_pools_tick`
+/// (see the `tokio::join!` in `main`), not sequentially after it --
+/// CLMM needs a different RPC call shape (one pool-state account vs.
+/// two token vaults per pool), so it can't share the existing batch,
+/// but there's no reason to pay its network latency serially on top of
+/// the batch's within the same 400ms poll budget.
+async fn process_clmm_pool_tick(client: &RpcClient, pool: &mut ClmmPoolConfig) {
+    let network_start = Instant::now();
+    let fetch = tokio::time::timeout(
+        RPC_TIMEOUT,
+        client.get_account_with_commitment(&pool.pool_pubkey, CommitmentConfig::confirmed()),
+    )
+    .await;
+    let network_elapsed = network_start.elapsed();
+
+    let outcome: Result<(clmm::ClmmPoolState, u64)> = match fetch {
+        Ok(Ok(resp)) => resp
+            .value
+            .context("CLMM pool account not found")
+            .and_then(|account| {
+                if account.owner != pool.program_id {
+                    anyhow::bail!(
+                        "CLMM pool account owner {} doesn't match expected program {} -- wrong pubkey or the pool migrated",
+                        account.owner,
+                        pool.program_id
+                    );
+                }
+                clmm::parse_clmm_account(&account.data)
+            })
+            .map(|state| (state, resp.context.slot)),
+        Ok(Err(e)) => Err(e).context("getAccountInfo RPC call failed"),
+        Err(_elapsed) => Err(anyhow::anyhow!("timeout")),
+    };
+
+    match outcome {
+        Ok((state, slot)) => {
+            pool.retry_count = 0;
+            if !pool.connected {
+                pool.connected = true;
+                logger::log(
+                    Level::Info,
+                    &[
+                        ("pair", pool.pair_label),
+                        ("rpc", "connected"),
+                        ("status", "CONNECTED"),
+                    ],
+                );
+            }
+
+            let parse_start = Instant::now();
+            let price =
+                clmm::sqrt_price_to_price(state.sqrt_price_x64, pool.decimals_a, pool.decimals_b);
+            let parse_elapsed = parse_start.elapsed();
+
+            let shm_start = Instant::now();
+            // reserve_sol/reserve_usdc are 0: CLMM has no constant-
+            // product reserves to report, unlike the Standard-AMM
+            // pools -- see spread-detector/src/main.rs's zero-reserve
+            // guard before sizing.rs, which is what makes this safe to
+            // publish as-is rather than needing a sentinel elsewhere.
+            pool.shm_writer.write(0, 0, price, now_micros(), slot);
+            let shm_elapsed = shm_start.elapsed();
+            let code_elapsed = parse_elapsed + shm_elapsed;
+
+            logger::log(
+                Level::Info,
+                &[
+                    ("pair", pool.pair_label),
+                    ("price", &format!("{:.8}", price)),
+                    ("tick", &state.tick_current.to_string()),
+                    ("liquidity", &state.liquidity.to_string()),
+                    ("slot", &slot.to_string()),
+                    ("net", &format!("{}ms", network_elapsed.as_millis())),
+                    ("code", &format!("{}us", code_elapsed.as_micros())),
+                ],
+            );
+
+            if network_elapsed > RPC_WARN_THRESHOLD {
+                logger::log(
+                    Level::Warn,
+                    &[
+                        ("pair", pool.pair_label),
+                        ("rpc", "slow"),
+                        ("latency", &format!("{}ms", network_elapsed.as_millis())),
+                        ("threshold", &format!("{}ms", RPC_WARN_THRESHOLD.as_millis())),
+                    ],
+                );
+            }
+        }
+        Err(e) => {
+            pool.retry_count += 1;
+            logger::log(
+                Level::Error,
+                &[
+                    ("pair", pool.pair_label),
+                    ("rpc", "failed"),
+                    ("reason", &format!("{:#}", e)),
+                    ("retry", &pool.retry_count.to_string()),
+                ],
+            );
+            if network_elapsed > RPC_WARN_THRESHOLD {
+                logger::log(
+                    Level::Warn,
+                    &[
+                        ("pair", pool.pair_label),
+                        ("rpc", "slow"),
+                        ("latency", &format!("{}ms", network_elapsed.as_millis())),
+                        ("threshold", &format!("{}ms", RPC_WARN_THRESHOLD.as_millis())),
+                    ],
+                );
+            }
+        }
+    }
+}
 
 /// One pool this ingestor polls. `base_vault`/`quote_vault` are named
 /// generically (not "sol_vault") since the same struct now serves both
@@ -294,21 +442,12 @@ async fn main() -> Result<()> {
             connected: false,
             retry_count: 0,
         },
-        // BONK, 5 decimals -- calculate_price is already generic over
-        // base_decimals, same as RAY.
-        PoolConfig {
-            pair_label: "BONK/USDC",
-            pool_id: "G7mw1d83ismcQJKkzt62Ug4noXCjVhu3eV7U5EMgge6Z",
-            base_vault: Pubkey::from_str("B4kvik9yEXTJ1UScDUqTxfvhnHUkfChv5pF6zNSyEraQ")
-                .context("invalid BONK vault pubkey")?,
-            quote_vault: Pubkey::from_str("5BsukuACaQcjVu9XSZ8PP3BN9pBxxtZjQELxosC4Ucyx")
-                .context("invalid USDC vault pubkey (BONK/USDC pool)")?,
-            base_decimals: 5,
-            shm_writer: ShmWriter::new(types::ZORA_SHM_DEX_BONK_NAME)
-                .context("failed to create BONK/USDC shared memory segment")?,
-            connected: false,
-            retry_count: 0,
-        },
+        // BONK/USDC used to be here as a Standard AMM v4 pool. It's now
+        // read via the CLMM pool instead (see `bonk_clmm` below,
+        // constructed separately since it needs a different RPC call
+        // shape) -- most of BONK's Raydium liquidity sits in the CLMM
+        // pool, not this legacy one.
+        //
         // Wormhole-bridged ZEC, 8 decimals. This pool is on Raydium's
         // newer CPMM program rather than the legacy AMM v4 program the
         // other pairs use -- doesn't matter here, since we only ever
@@ -344,6 +483,20 @@ async fn main() -> Result<()> {
         },
     ];
 
+    let mut bonk_clmm = ClmmPoolConfig {
+        pair_label: "BONK/USDC",
+        pool_pubkey: Pubkey::from_str(BONK_CLMM_POOL_ID)
+            .context("invalid BONK/USDC CLMM pool pubkey")?,
+        program_id: Pubkey::from_str(BONK_CLMM_PROGRAM_ID)
+            .context("invalid CLMM program pubkey")?,
+        decimals_a: BONK_CLMM_DECIMALS_A,
+        decimals_b: BONK_CLMM_DECIMALS_B,
+        shm_writer: ShmWriter::new(types::ZORA_SHM_DEX_BONK_NAME)
+            .context("failed to create BONK/USDC shared memory segment")?,
+        connected: false,
+        retry_count: 0,
+    };
+
     for pool in &pools {
         // Not "status=CONNECTED" yet: constructing an RpcClient doesn't
         // itself talk to the network, so we don't actually know the RPC
@@ -363,6 +516,19 @@ async fn main() -> Result<()> {
             &[("pair", pool.pair_label), ("shm", "created")],
         );
     }
+
+    logger::log(
+        Level::Info,
+        &[
+            ("pair", bonk_clmm.pair_label),
+            ("pool", BONK_CLMM_POOL_ID),
+            ("program", "CLMM"),
+        ],
+    );
+    logger::log(
+        Level::Info,
+        &[("pair", bonk_clmm.pair_label), ("shm", "created")],
+    );
 
     // Precomputed once (the vault pubkeys never change) rather than
     // rebuilt from `pools` on every tick. Must stay the same length
@@ -397,15 +563,22 @@ async fn main() -> Result<()> {
     let mut sigterm = signal(SignalKind::terminate())?;
 
     loop {
-        // All pools are fetched in one batched RPC call now (see
-        // rpc.rs's fetch_all_pool_states) rather than one call per
-        // pool -- half the request rate against the public RPC
-        // endpoint, which throttles per-request. The trade-off from
-        // before (a slow RPC provider occasionally pushing total tick
-        // time past POLL_INTERVAL) still applies the same way:
-        // saturating_sub below just skips the sleep when that happens.
-        let total_elapsed =
-            process_all_pools_tick(&client, &pool_vaults, &mut pools).await;
+        // All Standard-AMM pools are fetched in one batched RPC call
+        // (see rpc.rs's fetch_all_pool_states) -- half the request rate
+        // against the public RPC endpoint, which throttles per-request.
+        // BONK's CLMM pool needs a different call shape (one pool-state
+        // account, not two token vaults) and can't join that batch, so
+        // it's fetched via its own getAccountInfo call -- run
+        // concurrently with the batch (not after it) so its network
+        // latency doesn't serialize on top of the batch's within the
+        // same 400ms poll budget. `start.elapsed()` below measures the
+        // true wall-clock cost of both together, not either one alone.
+        let start = Instant::now();
+        let _ = tokio::join!(
+            process_all_pools_tick(&client, &pool_vaults, &mut pools),
+            process_clmm_pool_tick(&client, &mut bonk_clmm),
+        );
+        let total_elapsed = start.elapsed();
 
         // saturating_sub instead of plain `-`: if fetching all pools
         // took longer than the poll interval, a normal subtraction
@@ -428,6 +601,7 @@ async fn main() -> Result<()> {
     for pool in pools {
         pool.shm_writer.shutdown();
     }
+    bonk_clmm.shm_writer.shutdown();
     logger::log(Level::Info, &[("shutdown", "complete")]);
     Ok(())
 }

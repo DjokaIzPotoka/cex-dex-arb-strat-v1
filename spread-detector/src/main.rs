@@ -615,15 +615,32 @@ async fn main() -> Result<()> {
             }
 
             // status == Opportunity: size it.
-            let fixed_jito_tip_usdc = FIXED_JITO_TIP_SOL * cex.bid;
-            let (optimal_size, estimated_profit) = sizing::find_optimal_size(
-                dex.reserve_usdc,
-                dex.reserve_sol,
-                cex.bid,
-                max_trade_size_usdc,
-                TOTAL_COSTS_PCT,
-                fixed_jito_tip_usdc,
-            );
+            //
+            // CLMM-sourced pairs (BONK/USDC as of this writing) report
+            // reserve_sol=0/reserve_usdc=0 -- there's no constant-
+            // product curve to size against yet (see
+            // ingestor-dex-solana/src/clmm.rs), and feeding a zero
+            // reserve into find_optimal_size's binary search reaches an
+            // amount_in=0/reserve_in=0 division by zero in
+            // sizing::get_amount_out the first time low stays at its
+            // initial 0.0 (which it always does once reserve_out=0
+            // makes every size's profit strictly decreasing -- see that
+            // function). Treat it the same as "no profitable size
+            // found" below: the spread itself still gets logged and
+            // recorded to CSV.
+            let (optimal_size, estimated_profit) = if dex.reserve_usdc == 0 || dex.reserve_sol == 0 {
+                (0.0, 0.0)
+            } else {
+                let fixed_jito_tip_usdc = FIXED_JITO_TIP_SOL * cex.bid;
+                sizing::find_optimal_size(
+                    dex.reserve_usdc,
+                    dex.reserve_sol,
+                    cex.bid,
+                    max_trade_size_usdc,
+                    TOTAL_COSTS_PCT,
+                    fixed_jito_tip_usdc,
+                )
+            };
 
             // The raw spread looked positive, but price impact at any
             // size up to max_trade_size_usdc ate the whole thing --

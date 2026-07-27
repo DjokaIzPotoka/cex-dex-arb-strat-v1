@@ -8,10 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/Users/veljko/Desktop/zore-core-v1/src/handlers/book_ticker_handler.cpp" "CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o.d"
-  "/Users/veljko/Desktop/zore-core-v1/src/ipc/shm_writer.cpp" "CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o.d"
-  "/Users/veljko/Desktop/zore-core-v1/src/main.cpp" "CMakeFiles/zore_core.dir/src/main.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/main.cpp.o.d"
-  "/Users/veljko/Desktop/zore-core-v1/src/websocket/client.cpp" "CMakeFiles/zore_core.dir/src/websocket/client.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/websocket/client.cpp.o.d"
+  "/home/djokaizpotoka/CLionProjects/zora-core-v1/src/handlers/book_ticker_handler.cpp" "CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/handlers/book_ticker_handler.cpp.o.d"
+  "/home/djokaizpotoka/CLionProjects/zora-core-v1/src/ipc/shm_writer.cpp" "CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/ipc/shm_writer.cpp.o.d"
+  "/home/djokaizpotoka/CLionProjects/zora-core-v1/src/main.cpp" "CMakeFiles/zore_core.dir/src/main.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/main.cpp.o.d"
+  "/home/djokaizpotoka/CLionProjects/zora-core-v1/src/websocket/client.cpp" "CMakeFiles/zore_core.dir/src/websocket/client.cpp.o" "gcc" "CMakeFiles/zore_core.dir/src/websocket/client.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.
