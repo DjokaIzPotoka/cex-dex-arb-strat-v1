@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl *)",
+      "Bash(python3 *)",
+      "Read(//home/djokaizpotoka/.cargo/registry/src/**)",
+      "Bash(find / -maxdepth 6 -iname \"solana-client-1.18*\" -path \"*registry*\")",
+      "WebFetch(domain:docs.rs)",
+      "Bash(cargo check *)",
+      "Bash(cargo test *)",
+      "Bash(make build *)"
+    ]
+  }
+}
