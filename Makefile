@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -100,3 +100,19 @@ discovery-build:
 
 discovery-test:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_orca_snapshot.py
+
+# Separate target rather than folding into discovery-test: this one
+# also cross-checks against live Solana RPC (see
+# run_raydium_snapshot.py), so it needs SOLANA_RPC_URL from .env the
+# same way scripts/zora.sh loads it for the Rust DEX ingestor -- falls
+# back to the public endpoint if .env doesn't exist.
+discovery-test-raydium:
+	@set -a; [ -f "$(CURDIR)/.env" ] && . "$(CURDIR)/.env"; set +a; \
+	$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_raydium_snapshot.py
+
+# No .env sourcing needed here, unlike discovery-test-raydium: CLMM
+# validation cross-checks against Binance's public ticker instead of
+# on-chain RPC (see run_raydium_clmm_snapshot.py's docstring for why),
+# so there's no SOLANA_RPC_URL involved at all.
+discovery-test-raydium-clmm:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_raydium_clmm_snapshot.py
