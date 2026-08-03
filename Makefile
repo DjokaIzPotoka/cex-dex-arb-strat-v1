@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -126,3 +126,17 @@ discovery-test-meteora:
 # Solana RPC call exists in this path at all).
 discovery-test-binance:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_binance_snapshot.py
+
+# Remaining four CEX providers -- same no-SOLANA_RPC_URL note as
+# discovery-test-binance applies to all of these.
+discovery-test-bybit:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_bybit_snapshot.py
+
+discovery-test-okx:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_okx_snapshot.py
+
+discovery-test-bitget:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_bitget_snapshot.py
+
+discovery-test-gateio:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_gateio_snapshot.py
