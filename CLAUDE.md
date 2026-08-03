@@ -101,6 +101,19 @@ SOL/USDC (Raydium CLMM), RAY/USDC (Raydium Standard AMM), BONK/USDC (Raydium CLM
 
 UNI/USDC was removed: no pool with meaningful liquidity exists for it on either Raydium or Orca (every alternative checked had single-digit-dollar TVL and no volume).
 
+## MEV Discovery Subsystem (`discovery/`)
+
+A separate, broad-coverage MEV opportunity discovery pipeline (Python + ClickHouse) — not part of the CEX-DEX paper trading pipeline described above, and not yet a running service (Phase 1a is a one-shot script; the tiered scheduler comes in a later phase). Full design: `docs/mev-discovery-plan.md`.
+
+```bash
+make discovery-build   # venv + ClickHouse (docker compose) + migrations
+make discovery-test    # one-shot Orca Whirlpool snapshot (validation + broad pull)
+```
+
+Key files: `discovery/src/providers/base.py` (provider Protocols), `discovery/src/providers/orca_rest.py` (Orca adapter), `discovery/http_client.py` (shared User-Agent + retry/backoff — venue APIs behind Cloudflare, like Orca's, 403 requests without a browser-like User-Agent; reuse this for new REST providers instead of rediscovering that), `discovery/src/run_orca_snapshot.py` (one-shot entrypoint).
+
+**Provider convention** (design doc section 3.3): a REST provider implements all three provider Protocols (`PoolMetadataProvider`, `PoolStateProvider`, `PoolVolumeProvider`), since a venue's own REST endpoint typically returns metadata, price, and volume together in one call. An RPC provider (e.g. a future `getMultipleAccounts`-based one) implements `PoolStateProvider` only — raw on-chain account state gives price/active_liquidity but not the off-chain-aggregated `volume_24h_usd`.
+
 ## Environment
 
 - `.env` (gitignored) holds `SOLANA_RPC_URL` — contains an embedded API key, must never be committed

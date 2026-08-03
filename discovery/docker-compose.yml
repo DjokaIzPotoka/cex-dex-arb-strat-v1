@@ -1,0 +1,24 @@
+services:
+  clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:24.8
+    container_name: zora_discovery_clickhouse
+    ports:
+      # 8123 (HTTP) is clear of the ZORA QuestDB compose file's ports.
+      # Native 9000 is not: QuestDB's ILP port already claims host 9000
+      # (see ../docker_copose.yml), so ClickHouse's native protocol is
+      # remapped to 9002 on the host. Container-side ports are untouched.
+      - "8123:8123"
+      - "9002:9000"
+    environment:
+      CLICKHOUSE_DB: zora_discovery
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+
+volumes:
+  clickhouse_data:

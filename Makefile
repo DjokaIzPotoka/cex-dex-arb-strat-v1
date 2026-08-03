@@ -1,7 +1,9 @@
-.PHONY: build rebuild start stop attach logs status clean
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
+DISCOVERY_DIR := $(CURDIR)/discovery
+DISCOVERY_VENV := $(DISCOVERY_DIR)/.venv
 
 CEX_PID_FILE := /tmp/zora_cex.pid
 DEX_PID_FILE := /tmp/zora_dex.pid
@@ -69,3 +71,32 @@ clean:
 	@echo "Cleaning Rust build artifacts..."
 	@cd $(DEX_DIR) && cargo clean
 	@cargo clean --manifest-path spread-detector/Cargo.toml
+
+# --- MEV discovery subsystem (Phase 0 + 1a, see docs/mev-discovery-plan.md) ---
+# Separate from the C++/Rust ZORA paper-trading pipeline above: a
+# one-shot Python script + ClickHouse, not (yet) a tmux-managed service.
+#
+# Uses podman + podman-compose, not docker: rootless, no background
+# daemon required. `podman compose` (space, not hyphen) is podman's own
+# subcommand -- it shells out to the podman-compose binary as an
+# "external compose provider" rather than requiring Docker's compose
+# plugin, which is what makes `docker-compose.yml` work unmodified here.
+DISCOVERY_COMPOSE := podman compose -f $(DISCOVERY_DIR)/docker-compose.yml
+
+discovery-build:
+	@echo "Setting up discovery Python venv..."
+	@python3 -m venv $(DISCOVERY_VENV)
+	@$(DISCOVERY_VENV)/bin/pip install -q --upgrade pip
+	@$(DISCOVERY_VENV)/bin/pip install -q -r $(DISCOVERY_DIR)/requirements.txt
+	@echo "Starting ClickHouse (podman compose)..."
+	@$(DISCOVERY_COMPOSE) up -d
+	@echo "Waiting for ClickHouse to accept connections..."
+	@for i in $$(seq 1 30); do \
+		if curl -s -o /dev/null "http://127.0.0.1:8123/ping"; then break; fi; \
+		sleep 1; \
+	done
+	@echo "Applying migrations..."
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/migrations/run_migrations.py
+
+discovery-test:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_orca_snapshot.py

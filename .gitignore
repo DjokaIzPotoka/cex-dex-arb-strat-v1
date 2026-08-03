@@ -7,3 +7,6 @@ ingestor-dex-solana/target/
 target/
 data/*.csv
 logs/
+discovery/.venv/
+__pycache__/
+*.pyc
