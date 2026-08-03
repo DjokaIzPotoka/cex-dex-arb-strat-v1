@@ -28,12 +28,15 @@ pub struct ZoraDexPrice {
 
 /// POSIX shared memory segment names the spread detector reads from.
 /// SOL/USDC keeps its original name unchanged; RAY/USDC, BONK/USDC,
-/// ZEC/USDC, and UNI/USDC are new.
+/// ZEC/USDC, TRX/USDC, and KMNO/USDC are new. UNI/USDC used to have one
+/// too but was removed -- no viable pool exists for it on either
+/// Raydium or Orca.
 pub const ZORA_SHM_DEX_NAME: &str = "/zora_dex_price";
 pub const ZORA_SHM_DEX_RAY_NAME: &str = "/zora_dex_ray";
 pub const ZORA_SHM_DEX_BONK_NAME: &str = "/zora_dex_bonk";
 pub const ZORA_SHM_DEX_ZEC_NAME: &str = "/zora_dex_zec";
-pub const ZORA_SHM_DEX_UNI_NAME: &str = "/zora_dex_uni";
+pub const ZORA_SHM_DEX_TRX_NAME: &str = "/zora_dex_trx";
+pub const ZORA_SHM_DEX_KMNO_NAME: &str = "/zora_dex_kmno";
 
 #[cfg(test)]
 mod tests {

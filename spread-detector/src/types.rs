@@ -40,8 +40,10 @@ pub struct ZoraDexPrice {
 }
 
 // SOL/USDC segment names are unchanged; RAY/USDC's, BONK/USDC's,
-// ZEC/USDC's, and UNI/USDC's are new (same naming choice made on both
-// ingestors, so this reads symmetrically).
+// ZEC/USDC's, TRX/USDC's, and KMNO/USDC's are new (same naming choice
+// made on both ingestors, so this reads symmetrically). UNI/USDC used
+// to have a pair here too but was removed -- no viable pool exists for
+// it on either Raydium or Orca.
 pub const ZORA_SHM_CEX_NAME: &str = "/zora_cex_price";
 pub const ZORA_SHM_DEX_NAME: &str = "/zora_dex_price";
 pub const ZORA_SHM_CEX_RAY_NAME: &str = "/zora_cex_ray";
@@ -50,8 +52,10 @@ pub const ZORA_SHM_CEX_BONK_NAME: &str = "/zora_cex_bonk";
 pub const ZORA_SHM_DEX_BONK_NAME: &str = "/zora_dex_bonk";
 pub const ZORA_SHM_CEX_ZEC_NAME: &str = "/zora_cex_zec";
 pub const ZORA_SHM_DEX_ZEC_NAME: &str = "/zora_dex_zec";
-pub const ZORA_SHM_CEX_UNI_NAME: &str = "/zora_cex_uni";
-pub const ZORA_SHM_DEX_UNI_NAME: &str = "/zora_dex_uni";
+pub const ZORA_SHM_CEX_TRX_NAME: &str = "/zora_cex_trx";
+pub const ZORA_SHM_DEX_TRX_NAME: &str = "/zora_dex_trx";
+pub const ZORA_SHM_CEX_KMNO_NAME: &str = "/zora_cex_kmno";
+pub const ZORA_SHM_DEX_KMNO_NAME: &str = "/zora_dex_kmno";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {

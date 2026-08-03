@@ -35,11 +35,10 @@
 //! - mint_decimals_0/mint_decimals_1 at the computed offsets read back
 //!   as 5/6, and token_mint_0/token_mint_1 (also decoded) matched
 //!   BONK's and USDC's real mint addresses respectively -- confirming
-//!   BONK is mint_0 (`decimals_a`) and USDC is mint_1 (`decimals_b`)
-//!   for this pool, which is what `sqrt_price_to_price`'s doc comment
-//!   below assumes.
-//! - The resulting price (see `sqrt_price_to_price`) came out to
-//!   ~3.048e-6 USDC/BONK, matching the ~3.043e-6 snapshot from
+//!   BONK is mint_0 and USDC is mint_1 for this pool, which is what
+//!   `sqrt_price::sqrt_price_to_price`'s doc comment assumes.
+//! - The resulting price (see `crate::sqrt_price::sqrt_price_to_price`)
+//!   came out to ~3.048e-6 USDC/BONK, matching the ~3.043e-6 snapshot from
 //!   Raydium's own API within ~0.2% (expected drift between two
 //!   different reads of a live price, not a units/offset error, which
 //!   would show up as an off-by-10x, not a 0.2% difference).
@@ -106,32 +105,9 @@ pub fn parse_clmm_account(data: &[u8]) -> Result<ClmmPoolState> {
     })
 }
 
-/// Converts a CLMM pool's Q64.64 sqrt-price into a real-world price.
-///
-/// `sqrt_price_x64` is sqrt(token_1_raw / token_0_raw) in Q64.64 fixed
-/// point (Raydium's own doc comment on the field); squaring it gives
-/// the raw ratio token_1_raw/token_0_raw (smallest units of each mint,
-/// undecimalized). `decimals_a` is token_0's mint decimals, `decimals_b`
-/// is token_1's -- multiplying by 10^(decimals_a - decimals_b) rescales
-/// that raw ratio into real token_1 units per real token_0 unit:
-///
-///   real_token0 = raw_token0 / 10^decimals_a
-///   real_token1 = raw_token1 / 10^decimals_b
-///   price (token_1 per token_0)
-///     = real_token1 / real_token0
-///     = (raw_token1 / raw_token0) * 10^(decimals_a - decimals_b)
-///
-/// For BONK/USDC specifically, BONK is token_0 (decimals_a=5) and USDC
-/// is token_1 (decimals_b=6) -- see this module's doc comment for how
-/// that was confirmed, not assumed. Callers must pass decimals in
-/// mint_0/mint_1 order, not "base/quote" by convention, since which
-/// mint is 0 vs. 1 is decided on-chain by raw pubkey ordering
-/// (token_mint_0 < token_mint_1), not by which token is economically
-/// the "base".
-pub fn sqrt_price_to_price(sqrt_price_x64: u128, decimals_a: i32, decimals_b: i32) -> f64 {
-    let price_raw = (sqrt_price_x64 as f64 / (1u128 << 64) as f64).powi(2);
-    price_raw * 10f64.powi(decimals_a - decimals_b)
-}
+// Price conversion (sqrt_price_x64 -> real price) is shared with
+// Orca Whirlpools and lives in sqrt_price.rs, not here -- see that
+// module's doc comment.
 
 #[cfg(test)]
 mod tests {
@@ -143,40 +119,6 @@ mod tests {
     const SNAPSHOT_SQRT_PRICE_X64: u128 = 101_848_797_086_041_337;
     const SNAPSHOT_TICK_CURRENT: i32 = -103_989;
     const SNAPSHOT_LIQUIDITY: u128 = 47_758_826_584_743;
-    // Raydium API's reported price at the time given in the task spec
-    // (a few seconds apart from the live read above -- a live price
-    // moves between the two, so the test tolerance below is loose
-    // enough to absorb that drift without masking a real offset bug).
-    const TASK_SPEC_EXPECTED_PRICE: f64 = 3.042638548482449e-6;
-
-    #[test]
-    fn sqrt_price_to_price_matches_known_bonk_usdc_snapshot() {
-        let price = sqrt_price_to_price(SNAPSHOT_SQRT_PRICE_X64, 5, 6);
-        // 1% covers ordinary price drift between the two reads while
-        // still catching a decimals-direction bug, which would be off
-        // by a full power of 10 (1000%), not 1%.
-        let rel_err = (price - TASK_SPEC_EXPECTED_PRICE).abs() / TASK_SPEC_EXPECTED_PRICE;
-        assert!(
-            rel_err < 0.01,
-            "price {price} not within 1% of expected {TASK_SPEC_EXPECTED_PRICE} (rel_err={rel_err})"
-        );
-    }
-
-    #[test]
-    fn sqrt_price_to_price_zero_is_zero() {
-        assert_eq!(sqrt_price_to_price(0, 5, 6), 0.0);
-    }
-
-    #[test]
-    fn sqrt_price_to_price_decimals_direction_matters() {
-        // Swapping decimals_a/decimals_b should move the result by
-        // 10^(2*(decimals_b - decimals_a)), not leave it unchanged --
-        // this is the exact bug class the task warned about (silent
-        // garbage from a flipped/wrong offset or argument order).
-        let correct = sqrt_price_to_price(SNAPSHOT_SQRT_PRICE_X64, 5, 6);
-        let flipped = sqrt_price_to_price(SNAPSHOT_SQRT_PRICE_X64, 6, 5);
-        assert!((flipped / correct - 100.0).abs() < 1e-6);
-    }
 
     fn synthetic_account_bytes() -> Vec<u8> {
         let mut buf = vec![0u8; MIN_ACCOUNT_LEN];

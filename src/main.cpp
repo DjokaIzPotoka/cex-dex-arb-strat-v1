@@ -18,7 +18,7 @@ constexpr const char* kPort = "9443";
 // why that changes how messages are parsed vs. the old single-stream
 // endpoint.
 constexpr const char* kPath =
-    "/stream?streams=solusdc@bookTicker/rayusdc@bookTicker/bonkusdc@bookTicker/zecusdc@bookTicker/uniusdc@bookTicker";
+    "/stream?streams=solusdc@bookTicker/rayusdc@bookTicker/bonkusdc@bookTicker/zecusdc@bookTicker/trxusdc@bookTicker/kmnousdc@bookTicker";
 
 zora::websocket::Client* g_client = nullptr;
 
@@ -50,7 +50,9 @@ int main() {
     // the <10us compute budget (see book_ticker_handler.cpp).
     setvbuf(stdout, nullptr, _IOLBF, 0);
 
-    zora::utils::print_banner("ZORA CEX INGESTOR", "Binance SOL/USDC + RAY/USDC + BONK/USDC + ZEC/USDC + UNI/USDC");
+    zora::utils::print_banner(
+        "ZORA CEX INGESTOR",
+        "Binance SOL/USDC + RAY/USDC + BONK/USDC + ZEC/USDC + TRX/USDC + KMNO/USDC");
 
     install_signal_handlers();
 
@@ -82,19 +84,27 @@ int main() {
     }
     zora::utils::log(LogLevel::Info, {{"shm", "created"}, {"pair", "ZEC/USDC"}, {"path", ZORA_SHM_CEX_ZEC_NAME}});
 
-    zora::ipc::ShmWriter uni_shm;
-    if (!uni_shm.init(ZORA_SHM_CEX_UNI_NAME, "UNIUSDC")) {
-        zora::utils::log(LogLevel::Error, {{"shm", "create_failed"}, {"pair", "UNI/USDC"}, {"status", "ERROR"}});
+    zora::ipc::ShmWriter trx_shm;
+    if (!trx_shm.init(ZORA_SHM_CEX_TRX_NAME, "TRXUSDC")) {
+        zora::utils::log(LogLevel::Error, {{"shm", "create_failed"}, {"pair", "TRX/USDC"}, {"status", "ERROR"}});
         return EXIT_FAILURE;
     }
-    zora::utils::log(LogLevel::Info, {{"shm", "created"}, {"pair", "UNI/USDC"}, {"path", ZORA_SHM_CEX_UNI_NAME}});
+    zora::utils::log(LogLevel::Info, {{"shm", "created"}, {"pair", "TRX/USDC"}, {"path", ZORA_SHM_CEX_TRX_NAME}});
+
+    zora::ipc::ShmWriter kmno_shm;
+    if (!kmno_shm.init(ZORA_SHM_CEX_KMNO_NAME, "KMNOUSDC")) {
+        zora::utils::log(LogLevel::Error, {{"shm", "create_failed"}, {"pair", "KMNO/USDC"}, {"status", "ERROR"}});
+        return EXIT_FAILURE;
+    }
+    zora::utils::log(LogLevel::Info, {{"shm", "created"}, {"pair", "KMNO/USDC"}, {"path", ZORA_SHM_CEX_KMNO_NAME}});
 
     zora::handlers::BookTickerHandler handler({
         {"SOLUSDC", "SOL/USDC", &sol_shm},
         {"RAYUSDC", "RAY/USDC", &ray_shm},
         {"BONKUSDC", "BONK/USDC", &bonk_shm},
         {"ZECUSDC", "ZEC/USDC", &zec_shm},
-        {"UNIUSDC", "UNI/USDC", &uni_shm},
+        {"TRXUSDC", "TRX/USDC", &trx_shm},
+        {"KMNOUSDC", "KMNO/USDC", &kmno_shm},
     });
 
     zora::websocket::Client client(
@@ -102,12 +112,13 @@ int main() {
         [&handler](std::string_view msg, uint64_t receive_ts_us) {
             handler.handle(msg, receive_ts_us);
         },
-        [&sol_shm, &ray_shm, &bonk_shm, &zec_shm, &uni_shm]() {
+        [&sol_shm, &ray_shm, &bonk_shm, &zec_shm, &trx_shm, &kmno_shm]() {
             sol_shm.signal_gap();
             ray_shm.signal_gap();
             bonk_shm.signal_gap();
             zec_shm.signal_gap();
-            uni_shm.signal_gap();
+            trx_shm.signal_gap();
+            kmno_shm.signal_gap();
         }
     );
 
@@ -118,7 +129,8 @@ int main() {
     ray_shm.shutdown();
     bonk_shm.shutdown();
     zec_shm.shutdown();
-    uni_shm.shutdown();
+    trx_shm.shutdown();
+    kmno_shm.shutdown();
     zora::utils::log(LogLevel::Info, {{"shutdown", "complete"}});
     return EXIT_SUCCESS;
 }

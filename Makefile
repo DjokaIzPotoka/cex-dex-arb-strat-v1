@@ -8,6 +8,7 @@ DEX_PID_FILE := /tmp/zora_dex.pid
 SPR_PID_FILE := /tmp/zora_spr.pid
 CEX_LOG := /tmp/zora_cex.log
 DEX_LOG := /tmp/zora_dex.log
+SPR_LOG := $(CURDIR)/logs/zora_spr.log
 
 build:
 	@echo "Building CEX ingestor (C++, release)..."
@@ -38,12 +39,14 @@ logs:
 	@echo "ZORA logs:"; \
 	echo "  1) CEX  ($(CEX_LOG))"; \
 	echo "  2) DEX  ($(DEX_LOG))"; \
-	echo "  3) SPR  (attach to the live tmux session)"; \
+	echo "  3) SPR  ($(SPR_LOG))"; \
+	echo "  4) SPR  (attach to the live tmux session instead)"; \
 	read -p "Select: " choice; \
 	case "$$choice" in \
 		1) tail -f $(CEX_LOG) ;; \
 		2) tail -f $(DEX_LOG) ;; \
-		3) tmux attach -t zora ;; \
+		3) tail -f $(SPR_LOG) ;; \
+		4) tmux attach -t zora ;; \
 		*) echo "Cancelled." ;; \
 	esac
 

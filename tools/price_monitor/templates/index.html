@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ZORA TERMINAL</title>
+  <link rel="stylesheet" href="/static/theme.css">
+</head>
+<body>
+  <div class="menubar">
+    <div>
+      <div class="brand">Arbitrage monitor</div>
+    </div>
+  </div>
+
+  <div class="filterbar">
+    <div class="pairpills" id="pairpills"></div>
+  </div>
+
+  <div class="content">
+    <div class="section">PRICES -- CEX BID vs DEX POOL PRICE</div>
+    <table>
+      <thead>
+        <tr>
+          <th>PAIR</th><th>CEX BID</th><th>DEX PRICE</th><th>NET DIFF</th><th>% DIFF</th>
+          <th>THRESHOLD</th><th>CEX AGE</th><th>DEX AGE</th>
+        </tr>
+      </thead>
+      <tbody id="body-prices"></tbody>
+    </table>
+
+    <div class="section">LIQUIDITY -- DEX POOL RESERVES</div>
+    <table>
+      <thead>
+        <tr>
+          <th>PAIR</th><th>TVL (USD)</th><th>RESERVE (BASE)</th><th>RESERVE (USDC)</th>
+          <th>SLOT</th><th>VOLUME (24H)</th>
+        </tr>
+      </thead>
+      <tbody id="body-liquidity"></tbody>
+    </table>
+  </div>
+
+  <div class="foot">VOLUME NOT TRACKED BY ANY ZORA COMPONENT -- SHOWN AS N/A &nbsp;|&nbsp; READ-ONLY, LOCALHOST-ONLY VIEWER</div>
+  <div class="fkeystrip">
+    <div class="c1"></div><div class="c2"></div><div class="c3"></div>
+    <div class="c4"></div><div class="c5"></div><div class="c6"></div>
+  </div>
+
+  <script src="/static/index.js"></script>
+</body>
+</html>

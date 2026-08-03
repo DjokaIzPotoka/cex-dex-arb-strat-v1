@@ -14,7 +14,7 @@ mod shm;
 mod sizing;
 mod types;
 
-use detector::{SpreadStatus, TOTAL_COSTS_PCT};
+use detector::SpreadStatus;
 use logger::Level;
 use types::{Direction, Opportunity};
 
@@ -135,6 +135,24 @@ struct PairContext {
     // INTERESTING/OPPORTUNITY status off of exactly a 1-2 tick
     // cex/dex difference.
     min_abs_price_delta: f64,
+    // This pair's own round-trip cost (Jito tip + Binance taker fee +
+    // this pair's specific DEX pool fee -- see detector::total_costs_pct's
+    // doc comment for why the DEX fee can't be one global constant).
+    total_costs_pct: f64,
+    // The (cex_bid, dex_price) pair last logged/recorded as Interesting
+    // or Opportunity for this pair -- NAN initially so the very first
+    // real reading always reports (NAN never equals anything, including
+    // itself). Binance's bookTicker fires on *any* top-of-book change,
+    // including pure quantity changes with the price unchanged, which
+    // bumps cex.sequence (and re-triggers evaluation at `cex.sequence ==
+    // pair.last_cex_seq` below) without the price itself moving. Without
+    // this check, one real, persistent mispricing gets logged and
+    // written to the CSV again on every one of those quantity-only
+    // ticks -- confirmed live: a single static ZEC/USDC spread produced
+    // several duplicate OPPORTUNITY lines a few hundred ms apart. This
+    // turns that into one row per genuine price movement.
+    last_reported_cex_bid: f64,
+    last_reported_dex_price: f64,
 }
 
 /// Whether an ongoing staleness episode should produce a log line right
@@ -292,7 +310,7 @@ async fn main() -> Result<()> {
     // as fatal -- that's an expected, temporary startup condition here,
     // not an error.
     let mut logged_wait = false;
-    let (sol_reader, ray_reader, bonk_reader, zec_reader, uni_reader) = loop {
+    let (sol_reader, ray_reader, bonk_reader, zec_reader, trx_reader, kmno_reader) = loop {
         let sol_result = shm::ShmReader::try_open(types::ZORA_SHM_CEX_NAME, types::ZORA_SHM_DEX_NAME);
         let ray_result =
             shm::ShmReader::try_open(types::ZORA_SHM_CEX_RAY_NAME, types::ZORA_SHM_DEX_RAY_NAME);
@@ -300,12 +318,14 @@ async fn main() -> Result<()> {
             shm::ShmReader::try_open(types::ZORA_SHM_CEX_BONK_NAME, types::ZORA_SHM_DEX_BONK_NAME);
         let zec_result =
             shm::ShmReader::try_open(types::ZORA_SHM_CEX_ZEC_NAME, types::ZORA_SHM_DEX_ZEC_NAME);
-        let uni_result =
-            shm::ShmReader::try_open(types::ZORA_SHM_CEX_UNI_NAME, types::ZORA_SHM_DEX_UNI_NAME);
+        let trx_result =
+            shm::ShmReader::try_open(types::ZORA_SHM_CEX_TRX_NAME, types::ZORA_SHM_DEX_TRX_NAME);
+        let kmno_result =
+            shm::ShmReader::try_open(types::ZORA_SHM_CEX_KMNO_NAME, types::ZORA_SHM_DEX_KMNO_NAME);
 
-        match (sol_result, ray_result, bonk_result, zec_result, uni_result) {
-            (Ok(sol), Ok(ray), Ok(bonk), Ok(zec), Ok(uni)) => {
-                break (sol, ray, bonk, zec, uni)
+        match (sol_result, ray_result, bonk_result, zec_result, trx_result, kmno_result) {
+            (Ok(sol), Ok(ray), Ok(bonk), Ok(zec), Ok(trx), Ok(kmno)) => {
+                break (sol, ray, bonk, zec, trx, kmno)
             }
             _ => {
                 if !logged_wait {
@@ -354,6 +374,9 @@ async fn main() -> Result<()> {
             warned_dex_dead: false,
             last_dex_stale_warn_us: 0,
             min_abs_price_delta: 0.0,
+            total_costs_pct: detector::total_costs_pct(detector::SOL_CLMM_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
         },
         PairContext {
             pair_label: "RAY/USDC",
@@ -368,6 +391,9 @@ async fn main() -> Result<()> {
             warned_dex_dead: false,
             last_dex_stale_warn_us: 0,
             min_abs_price_delta: 0.0,
+            total_costs_pct: detector::total_costs_pct(detector::RAYDIUM_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
         },
         PairContext {
             pair_label: "BONK/USDC",
@@ -387,6 +413,9 @@ async fn main() -> Result<()> {
             // readings, while still letting a genuine larger move
             // through.
             min_abs_price_delta: 0.0000001,
+            total_costs_pct: detector::total_costs_pct(detector::BONK_CLMM_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
         },
         PairContext {
             pair_label: "ZEC/USDC",
@@ -401,12 +430,40 @@ async fn main() -> Result<()> {
             warned_dex_dead: false,
             last_dex_stale_warn_us: 0,
             min_abs_price_delta: 0.0,
+            // ZEC/USDC now trades against an Orca Whirlpool (0.16%
+            // fee, ~$3.6M TVL) rather than its old Raydium CPMM pool
+            // (2% fee, ~$26k TVL, essentially no volume) -- see
+            // ingestor-dex-solana/src/main.rs's zec_orca. Before this
+            // field existed, this pair used the same 0.425% global
+            // assumption as everyone else regardless of which pool it
+            // actually traded against; with the old CPMM pool that
+            // understated true round-trip cost by over 1.5 percentage
+            // points and made spreads that were actually deeply
+            // net-negative log as INTERESTING/OPPORTUNITY.
+            total_costs_pct: detector::total_costs_pct(detector::ZEC_WHIRLPOOL_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
         },
+        // UNI/USDC used to have a PairContext here. Removed outright:
+        // every UNI/USDC pool on Raydium and Orca besides the one that
+        // used to be wired in has single-digit-dollar TVL and no
+        // volume, so there's no viable venue for this pair at all.
+        //
+        // TRX/USDC and KMNO/USDC are both sourced from a concentrated-
+        // liquidity DEX pool (Raydium CLMM / Orca Whirlpool -- see
+        // ingestor-dex-solana/src/clmm.rs and orca.rs), same as
+        // BONK/USDC: reserve_sol=0/reserve_usdc=0, so they hit the same
+        // "no sizing curve" path below as BONK. Unlike BONK, no
+        // min_abs_price_delta noise floor is set here -- that was only
+        // added for BONK after testing it live and observing spurious
+        // readings; TRX and KMNO haven't been observed to need it, and
+        // guessing a value without that evidence risks masking real
+        // spreads instead of just noise.
         PairContext {
-            pair_label: "UNI/USDC",
-            reader: uni_reader,
-            cex_shm_name: types::ZORA_SHM_CEX_UNI_NAME,
-            dex_shm_name: types::ZORA_SHM_DEX_UNI_NAME,
+            pair_label: "TRX/USDC",
+            reader: trx_reader,
+            cex_shm_name: types::ZORA_SHM_CEX_TRX_NAME,
+            dex_shm_name: types::ZORA_SHM_DEX_TRX_NAME,
             last_cex_seq: 0,
             last_seq_change_us: now_micros(),
             warned_cex_dead: false,
@@ -415,6 +472,26 @@ async fn main() -> Result<()> {
             warned_dex_dead: false,
             last_dex_stale_warn_us: 0,
             min_abs_price_delta: 0.0,
+            total_costs_pct: detector::total_costs_pct(detector::TRX_CLMM_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
+        },
+        PairContext {
+            pair_label: "KMNO/USDC",
+            reader: kmno_reader,
+            cex_shm_name: types::ZORA_SHM_CEX_KMNO_NAME,
+            dex_shm_name: types::ZORA_SHM_DEX_KMNO_NAME,
+            last_cex_seq: 0,
+            last_seq_change_us: now_micros(),
+            warned_cex_dead: false,
+            last_reopen_attempt_us: 0,
+            last_cex_stale_warn_us: 0,
+            warned_dex_dead: false,
+            last_dex_stale_warn_us: 0,
+            min_abs_price_delta: 0.0,
+            total_costs_pct: detector::total_costs_pct(detector::KMNO_WHIRLPOOL_FEE_PCT),
+            last_reported_cex_bid: f64::NAN,
+            last_reported_dex_price: f64::NAN,
         },
     ];
 
@@ -483,7 +560,6 @@ async fn main() -> Result<()> {
             any_new = true;
             pair.last_cex_seq = cex.sequence;
             pair.last_seq_change_us = now_micros();
-            pair.warned_cex_dead = false;
 
             let dex = pair.reader.read_dex();
             let now_us = now_micros();
@@ -507,6 +583,15 @@ async fn main() -> Result<()> {
                 try_reopen_if_due(pair, now_us, should_log);
                 continue;
             }
+            // Only cleared once a *fresh* CEX update is actually observed
+            // (mirrors warned_dex_dead below) -- a new sequence number
+            // alone doesn't mean the data is fresh, and clearing this
+            // unconditionally on every new sequence used to reset the
+            // should_log_stale throttle on every single late-but-new
+            // update, flooding the log with a fresh "cex_stale" warning
+            // per update instead of one burst every
+            // STALE_WARN_REPEAT_INTERVAL_US.
+            pair.warned_cex_dead = false;
 
             if detector::is_stale(now_us, dex.timestamp_us, dex_stale_ms) {
                 let should_log = should_log_stale(
@@ -530,7 +615,7 @@ async fn main() -> Result<()> {
             pair.warned_dex_dead = false;
 
             let gross = detector::gross_spread(cex.bid, dex.price);
-            let net = detector::net_spread(gross, TOTAL_COSTS_PCT);
+            let net = detector::net_spread(gross, pair.total_costs_pct);
             let mut status =
                 detector::classify_spread(gross, net, min_log_gross_spread, min_net_spread);
 
@@ -550,6 +635,17 @@ async fn main() -> Result<()> {
             if status == SpreadStatus::Watching {
                 continue;
             }
+
+            // Same exact prices as the last thing reported for this
+            // pair -- this is a quantity-only CEX tick re-evaluating an
+            // already-reported, still-ongoing spread, not a new one
+            // (see last_reported_cex_bid's doc comment on PairContext).
+            // Skip logging/recording it again.
+            if cex.bid == pair.last_reported_cex_bid && dex.price == pair.last_reported_dex_price {
+                continue;
+            }
+            pair.last_reported_cex_bid = cex.bid;
+            pair.last_reported_dex_price = dex.price;
 
             logger::log(
                 Level::Info,
@@ -575,7 +671,7 @@ async fn main() -> Result<()> {
                             ("pair", pair.pair_label),
                             ("spread_negative", "true"),
                             ("gap", &format!("{:+.3}%", net * 100.0)),
-                            ("threshold", &format!("{:.3}%", TOTAL_COSTS_PCT * 100.0)),
+                            ("threshold", &format!("{:.3}%", pair.total_costs_pct * 100.0)),
                         ],
                     );
                 }
@@ -616,10 +712,11 @@ async fn main() -> Result<()> {
 
             // status == Opportunity: size it.
             //
-            // CLMM-sourced pairs (BONK/USDC as of this writing) report
+            // CLMM/Whirlpool-sourced pairs (BONK/USDC, TRX/USDC,
+            // KMNO/USDC as of this writing) report
             // reserve_sol=0/reserve_usdc=0 -- there's no constant-
             // product curve to size against yet (see
-            // ingestor-dex-solana/src/clmm.rs), and feeding a zero
+            // ingestor-dex-solana/src/clmm.rs and orca.rs), and feeding a zero
             // reserve into find_optimal_size's binary search reaches an
             // amount_in=0/reserve_in=0 division by zero in
             // sizing::get_amount_out the first time low stays at its
@@ -637,7 +734,7 @@ async fn main() -> Result<()> {
                     dex.reserve_sol,
                     cex.bid,
                     max_trade_size_usdc,
-                    TOTAL_COSTS_PCT,
+                    pair.total_costs_pct,
                     fixed_jito_tip_usdc,
                 )
             };

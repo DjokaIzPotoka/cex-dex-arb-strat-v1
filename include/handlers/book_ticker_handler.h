@@ -36,7 +36,7 @@ public:
     void handle(std::string_view raw, uint64_t receive_ts_us) noexcept;
 
 private:
-    static constexpr std::size_t kMaxRoutes = 8; // 5 pairs currently, headroom for 3 more
+    static constexpr std::size_t kMaxRoutes = 8; // 6 pairs currently, headroom for 2 more
     static constexpr std::size_t kMaxMessage = 1024;
     static constexpr std::size_t kBufCapacity = kMaxMessage + simdjson::SIMDJSON_PADDING;
 

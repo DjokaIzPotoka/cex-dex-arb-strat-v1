@@ -1,0 +1,112 @@
+/* ZORA terminal design tokens.
+ *
+ * Everything visual lives here -- colors, spacing, fonts -- as CSS
+ * custom properties plus the rules that use them. Edit this file and
+ * refresh the browser: server.py serves it fresh off disk on every
+ * request (no caching, no build step), so no restart is needed. The
+ * chart canvas in chart.js reads these same --variables at draw time
+ * (via getComputedStyle), so recoloring a line is a one-line edit here
+ * too, not a JS change.
+ */
+:root {
+  --bg: #000000;
+  --panel-bg: #0a0a0a;
+  --amber: #ffa500;
+  --amber-dim: #a66c00;
+  --green: #00d97a;
+  --red: #ff4d4d;
+  --grey: #5c5c5c;
+  --crimson: #810707;
+  --menu_gray: #131212;
+  --olive-text: #1a1400;
+  --pill-bg: #4c4c4c;
+  --font: monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--amber);
+  font-family: var(--font);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- shared title bar (index + chart) ---------- */
+.brand { background-color: var(--amber); font-size: 18px; font-weight: 500; color: #000000; padding: 8px 120px 8px 10px}
+
+/* ---------- index page ---------- */
+.menubar {
+  background: var(--crimson); color: #fff; font-size: 11px; font-weight: 700;
+  letter-spacing: 1px; display: flex; justify-content: flex-start;
+}
+
+.filterbar {
+  color: var(--olive-text); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.5px; padding: 6px 0 0; display: flex; align-items: center;
+  gap: 18px; flex-wrap: wrap;
+  border-bottom: 2px solid #787878;
+}
+.filterbar .chk { white-space: nowrap; }
+.filterbar .chk::before { content: '\25A0'; margin-right: 5px; }
+.pairpills { margin-right: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+.pill {
+  background: var(--pill-bg); color: #e1e1e1; padding: 7px 15px; cursor: pointer;
+  font-weight: 600; font-size: 11px;
+}
+.pill:hover { background: #787878; }
+.pill .fk { opacity: 0.65; margin-right: 4px; }
+
+.content { padding: 0 16px 16px 16px; }
+.section {
+  color: #ffffff; font-weight: 700; font-family: sans-serif; font-size: 16px; letter-spacing: 1px;
+  padding: 12px 2px 6px 2px; border-bottom: 1px solid #5a0000; margin-top: 6px;
+}
+
+table { width: 100%; border-collapse: collapse; background: var(--bg); }
+th {
+  text-align: right; font-size: 10px; letter-spacing: 0.5px; color: var(--amber-dim);
+  font-weight: 400; padding: 6px 10px;
+}
+th:first-child, td:first-child { text-align: left; }
+td { text-align: right; font-size: 13px; padding: 5px 10px; color: #ffffff; }
+tr:hover td { background: #0d0d0d; }
+.badge {
+  display: inline-block; background: var(--amber); color: #000; font-weight: 700;
+  font-size: 11px; padding: 0 4px; margin-right: 8px;
+}
+.pair-cell { font-weight: 700; letter-spacing: 0.5px; }
+.stale { color: var(--red) !important; }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.neutral { color: var(--amber); }
+.dim { color: var(--grey); }
+
+.foot {
+  font-size: 9px; color: #3a3a3a; letter-spacing: 0.5px; padding: 10px 16px 4px 16px;
+  border-top: 1px solid #1a1200;
+}
+.fkeystrip { display: flex; height: 6px; }
+.fkeystrip div { flex: 1; }
+.fkeystrip .c1 { background: var(--amber); }
+.fkeystrip .c2 { background: var(--green); }
+.fkeystrip .c3 { background: var(--red); }
+.fkeystrip .c4 { background: var(--crimson); }
+.fkeystrip .c5 { background: var(--menu_gray); }
+.fkeystrip .c6 { background: var(--grey); }
+
+/* ---------- chart page ---------- */
+.chartbody { padding: 14px; }
+.chart-titlebar { border-bottom: 1px solid var(--amber-dim); padding-bottom: 8px; margin-bottom: 10px; }
+.fields { display: flex; gap: 0; border: 1px solid #1a1200; margin-bottom: 10px; }
+.field { flex: 1; padding: 8px 12px; border-right: 1px solid #1a1200; }
+.field:last-child { border-right: none; }
+.field .k { font-size: 10px; color: var(--grey); letter-spacing: 1px; }
+.field .v { font-size: 16px; margin-top: 2px; }
+.field .v.pos { color: var(--green); }
+.field .v.neg { color: var(--red); }
+.field .v.stale { color: var(--red); }
+.legend { display: flex; gap: 18px; font-size: 11px; margin-bottom: 6px; color: var(--grey); }
+.swatch { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: middle; }
+canvas { background: var(--panel-bg); border: 1px solid #1a1200; display: block; }

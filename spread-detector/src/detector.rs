@@ -1,13 +1,43 @@
 //! Pure spread calculation and staleness checks. Kept free of any I/O
 //! or SHM access so these are simple to unit test in isolation.
 
-/// Raydium fee (0.25%) + Jito tip estimate (0.10%) + Binance taker fee
-/// (0.075%) = 0.425% total round-trip cost, as a fraction (matching
-/// `gross_spread`'s own units, not a percentage).
-pub const RAYDIUM_FEE_PCT: f64 = 0.0025;
+/// Jito tip estimate (0.10%) + Binance taker fee (0.075%) -- the parts
+/// of round-trip cost that don't depend on which DEX pool a pair
+/// trades against. The DEX swap fee itself varies per pool/program
+/// (a Standard-AMM pool's 0.25% is nothing like a thin CPMM pool's
+/// 2%), so it's supplied per pair via `total_costs_pct` below rather
+/// than folded into one global constant.
 pub const JITO_TIP_PCT: f64 = 0.0010;
 pub const BINANCE_TAKER_FEE_PCT: f64 = 0.00075;
-pub const TOTAL_COSTS_PCT: f64 = RAYDIUM_FEE_PCT + JITO_TIP_PCT + BINANCE_TAKER_FEE_PCT;
+
+/// Legacy Raydium Standard-AMM v4 fee (0.25%), still accurate for
+/// RAY/USDC -- the only pair left on that program (UNI/USDC used to
+/// share it too, before being removed for having no viable pool
+/// anywhere).
+pub const RAYDIUM_FEE_PCT: f64 = 0.0025;
+
+/// Round-trip cost for a pair, given that pair's own DEX pool fee.
+/// Fetched per pool from Raydium's/Orca's pool-info API (feeRate /
+/// tradeFeeRate), not assumed -- these vary by an order of magnitude
+/// or more across pools/programs:
+///   SOL/USDC (Raydium CLMM, 3ucNos4Nbu...):        0.04%
+///   RAY/USDC (Raydium Standard AMM v4):             0.25%
+///   BONK/USDC (Raydium CLMM, 3UwfrdLTpA...):        0.15%
+///   ZEC/USDC (Orca Whirlpool, GTHKH8s82Z...):       0.16%
+///   TRX/USDC (Raydium CLMM, HpgV2jnzgr...):         0.05%
+///   KMNO/USDC (Orca Whirlpool, 3ndjN1nJVU...):      0.01%
+/// (ZEC/USDC used to trade against a Raydium CPMM pool with a 2% fee
+/// and ~$26k TVL -- switched to the Orca Whirlpool above, which has
+/// ~$3.6M TVL and a much lower fee.)
+pub fn total_costs_pct(dex_fee_pct: f64) -> f64 {
+    dex_fee_pct + JITO_TIP_PCT + BINANCE_TAKER_FEE_PCT
+}
+
+pub const SOL_CLMM_FEE_PCT: f64 = 0.0004;
+pub const BONK_CLMM_FEE_PCT: f64 = 0.0015;
+pub const ZEC_WHIRLPOOL_FEE_PCT: f64 = 0.0016;
+pub const TRX_CLMM_FEE_PCT: f64 = 0.0005;
+pub const KMNO_WHIRLPOOL_FEE_PCT: f64 = 0.0001;
 
 /// (cex_bid - dex_price) / dex_price. Uses the CEX *bid* rather than
 /// mid: bid is what selling into the order book actually fills at, and
@@ -102,13 +132,21 @@ mod tests {
     #[test]
     fn net_spread_subtracts_total_costs() {
         let g = 0.005;
-        let n = net_spread(g, TOTAL_COSTS_PCT);
+        let n = net_spread(g, total_costs_pct(RAYDIUM_FEE_PCT));
         assert!((n - (0.005 - 0.00425)).abs() < 1e-12);
     }
 
     #[test]
-    fn total_costs_pct_matches_spec() {
-        assert!((TOTAL_COSTS_PCT - 0.00425).abs() < 1e-12);
+    fn total_costs_pct_matches_spec_for_standard_amm() {
+        assert!((total_costs_pct(RAYDIUM_FEE_PCT) - 0.00425).abs() < 1e-12);
+    }
+
+    #[test]
+    fn total_costs_pct_varies_per_pool_fee() {
+        // The cheapest CLMM/Whirlpool pool here costs meaningfully
+        // less per round trip than a Standard-AMM pair -- this is what
+        // makes one global constant wrong across the whole roster.
+        assert!(total_costs_pct(KMNO_WHIRLPOOL_FEE_PCT) < total_costs_pct(RAYDIUM_FEE_PCT));
     }
 
     #[test]

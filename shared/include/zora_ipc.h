@@ -19,7 +19,8 @@
 #define ZORA_SHM_CEX_RAY_NAME "/zora_cex_ray"    // RAY/USDC
 #define ZORA_SHM_CEX_BONK_NAME "/zora_cex_bonk"  // BONK/USDC
 #define ZORA_SHM_CEX_ZEC_NAME "/zora_cex_zec"    // ZEC/USDC
-#define ZORA_SHM_CEX_UNI_NAME "/zora_cex_uni"    // UNI/USDC
+#define ZORA_SHM_CEX_TRX_NAME "/zora_cex_trx"    // TRX/USDC
+#define ZORA_SHM_CEX_KMNO_NAME "/zora_cex_kmno"  // KMNO/USDC
 #define ZORA_SHM_SIZE sizeof(ZoraCexPrice)
 
 typedef struct {

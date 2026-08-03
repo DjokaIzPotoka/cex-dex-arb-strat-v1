@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ZORA</title>
+  <link rel="stylesheet" href="/static/theme.css">
+</head>
+<body class="chartbody">
+  <div class="titlebar chart-titlebar">
+    <div class="brand" id="pair-title">--</div>
+    <div class="cmd">ZORA::LIVE</div>
+  </div>
+
+  <div class="fields" id="fields">
+    <div class="field"><div class="k">CEX BID</div><div class="v" id="f-cex">--</div></div>
+    <div class="field"><div class="k">DEX PRICE</div><div class="v" id="f-dex">--</div></div>
+    <div class="field"><div class="k">GROSS SPREAD</div><div class="v" id="f-spread">--</div></div>
+    <div class="field"><div class="k">CEX AGE</div><div class="v" id="f-cex-age">--</div></div>
+    <div class="field"><div class="k">DEX AGE</div><div class="v" id="f-dex-age">--</div></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--amber);"></span>CEX BID</span>
+    <span><span class="swatch" style="background:var(--green);"></span>DEX PRICE</span>
+  </div>
+
+  <canvas id="chart" width="920" height="440"></canvas>
+
+  <script src="/static/chart.js"></script>
+</body>
+</html>

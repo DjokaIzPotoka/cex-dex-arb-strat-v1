@@ -89,13 +89,17 @@ Requires changes in all three components:
 2. **DEX ingestor**: add SHM name constant to `types.rs`, add `PoolConfig` entry in `main.rs` with correct pool ID, vault pubkeys, and `base_decimals`
 3. **Spread detector**: add both CEX and DEX SHM name constants to `types.rs`, add `ShmReader::try_open` call and `PairContext` entry in `main.rs`
 
-Token decimals matter: SOL=9, RAY=6, BONK=5, ZEC=8, UNI=8. Price calculation in `pool.rs` uses `base_decimals` to normalize reserves correctly.
+Token decimals matter: SOL=9, RAY=6, BONK=5, ZEC=8, TRX=6, KMNO=6. Price calculation in `pool.rs` (Standard-AMM pairs) or `sqrt_price.rs` (CLMM/Whirlpool pairs) uses these to normalize reserves/price correctly.
 
 For very low-priced pairs (like BONK at ~$0.000003), set `min_abs_price_delta` on the `PairContext` to filter quoting-noise false signals. Price display uses 8 decimal places throughout.
 
+Each pair also carries its own DEX pool fee (`detector::total_costs_pct` in the spread detector) rather than one global assumption -- fees vary by an order of magnitude or more across pools/programs (Standard-AMM Raydium pools are typically 0.25%, CLMM/Whirlpool pools range from 0.01% to 0.25%, and thin/unusual pools can be far higher). Check the pool's actual fee via Raydium's/Orca's pool-info API before wiring in a new pair rather than assuming it matches an existing one.
+
 ## Current Pair Roster
 
-SOL/USDC, RAY/USDC, BONK/USDC, ZEC/USDC, UNI/USDC
+SOL/USDC (Raydium CLMM), RAY/USDC (Raydium Standard AMM), BONK/USDC (Raydium CLMM), ZEC/USDC (Orca Whirlpool), TRX/USDC (Raydium CLMM), KMNO/USDC (Orca Whirlpool)
+
+UNI/USDC was removed: no pool with meaningful liquidity exists for it on either Raydium or Orca (every alternative checked had single-digit-dollar TVL and no volume).
 
 ## Environment
 
@@ -107,4 +111,4 @@ SOL/USDC, RAY/USDC, BONK/USDC, ZEC/USDC, UNI/USDC
 
 - Structured logging: `HH:MM:SS.mmm  LEVEL  SRC  key=value key=value...` — each component has its own logger (not a shared crate)
 - No `unwrap()`/`expect()` in production paths (Rust side) — `?` at startup is fine, the poll loops use explicit error handling
-- The `BookTickerHandler` in C++ has `kMaxRoutes = 8` — room for 3 more pairs before that needs bumping
+- The `BookTickerHandler` in C++ has `kMaxRoutes = 8` — room for 2 more pairs before that needs bumping

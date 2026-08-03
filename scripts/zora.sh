@@ -3,7 +3,10 @@
 # Launches ZORA: CEX and DEX run hidden in the background (logs go to
 # /tmp, not any visible pane), and the spread detector runs full-screen
 # in a tmux session's main window, since that's the process a human
-# actually watches. Two hidden windows tail the CEX/DEX logs for
+# actually watches -- its full output is also mirrored to logs/zora_spr.log
+# in the project directory (see the pipe-pane call below), appended
+# across restarts rather than truncated, so it's reviewable long after
+# any one session ends. Two hidden windows tail the CEX/DEX logs for
 # debugging. Kills any existing 'zora' session first, so this is always
 # a clean start.
 set -uo pipefail
@@ -30,6 +33,10 @@ DEX_PID_FILE="/tmp/zora_dex.pid"
 SPR_PID_FILE="/tmp/zora_spr.pid"
 CEX_LOG="/tmp/zora_cex.log"
 DEX_LOG="/tmp/zora_dex.log"
+# Unlike CEX_LOG/DEX_LOG, this lives in the project directory (not
+# /tmp) and is never truncated on start -- it's meant to accumulate
+# across restarts, not just cover the current session.
+SPR_LOG="$ROOT/logs/zora_spr.log"
 START_TS_FILE="/tmp/zora_start_ts"
 
 if ! command -v tmux >/dev/null 2>&1; then
@@ -41,7 +48,7 @@ fi
 
 tmux kill-session -t "$SESSION" 2>/dev/null || true
 rm -f "$CEX_PID_FILE" "$DEX_PID_FILE" "$SPR_PID_FILE"
-mkdir -p "$ROOT/data"
+mkdir -p "$ROOT/data" "$ROOT/logs"
 
 if [ ! -x "$CEX_BIN" ] || [ ! -x "$DEX_BIN" ] || [ ! -x "$SPR_BIN" ]; then
     echo "One or more binaries not built yet -- running 'make build'..."
@@ -78,6 +85,15 @@ tmux set-option -t "$SESSION:main" remain-on-exit on
 
 SPR_PID=$(tmux list-panes -t "$SESSION:main" -F '#{pane_pid}')
 echo "$SPR_PID" >"$SPR_PID_FILE"
+
+# Mirrors the main pane's own output to a plain-text log file, without
+# disturbing the pane's process itself (spread-detector still runs
+# directly as the pane's process -- see the PID comment above; this
+# just taps a copy of the bytes the pty already receives). `sed -u`
+# strips ANSI color/bold escape codes on the way into the file (the
+# live pane still renders them normally) and stays line-buffered so the
+# file updates in near real time, not just at process exit.
+tmux pipe-pane -o -t "$SESSION:main" "sed -u 's/\x1b\[[0-9;]*m//g' >>'$SPR_LOG'"
 
 # Hidden windows for debugging -- not visible by default, reached with
 # Ctrl+B 1 / Ctrl+B 2 (or `make logs`, which doesn't need tmux at all).
