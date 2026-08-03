@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -116,3 +116,8 @@ discovery-test-raydium:
 # so there's no SOLANA_RPC_URL involved at all.
 discovery-test-raydium-clmm:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_raydium_clmm_snapshot.py
+
+# Same as discovery-test-raydium-clmm: no .env/SOLANA_RPC_URL involved,
+# validation cross-checks against Binance's public ticker instead.
+discovery-test-meteora:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_meteora_snapshot.py
