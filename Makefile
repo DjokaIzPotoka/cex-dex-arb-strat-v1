@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -121,3 +121,8 @@ discovery-test-raydium-clmm:
 # validation cross-checks against Binance's public ticker instead.
 discovery-test-meteora:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_meteora_snapshot.py
+
+# First CEX provider -- no SOLANA_RPC_URL involved (CEX-only, no
+# Solana RPC call exists in this path at all).
+discovery-test-binance:
+	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_binance_snapshot.py
