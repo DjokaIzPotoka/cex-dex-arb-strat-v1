@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-start discovery-stop discovery-status discovery-attach
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -11,6 +11,9 @@ SPR_PID_FILE := /tmp/zora_spr.pid
 CEX_LOG := /tmp/zora_cex.log
 DEX_LOG := /tmp/zora_dex.log
 SPR_LOG := $(CURDIR)/logs/zora_spr.log
+
+DISCOVERY_SCHED_PID_FILE := /tmp/zora_discovery_sched.pid
+DISCOVERY_SCHED_LOG := $(CURDIR)/logs/zora_discovery_sched.log
 
 build:
 	@echo "Building CEX ingestor (C++, release)..."
@@ -146,3 +149,27 @@ discovery-test-gateio:
 # least once first, otherwise this has nothing to check.
 discovery-test-entity-detection:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_entity_detection.py
+
+# --- Tier 1 scheduler (Phase 1e) ---
+# Same naming/behavior convention as start/stop/status/attach above,
+# in its own 'zora-discovery' tmux session (see scripts/zora_discovery.sh)
+# so it starts, stops, and status-checks independently of the CEX/DEX/
+# spread-detector paper-trading session. Assumes `make discovery-build`
+# already provisioned the venv and ClickHouse, same assumption every
+# discovery-test-* target above already makes.
+discovery-start:
+	@bash "$(CURDIR)/scripts/zora_discovery.sh"
+
+discovery-stop:
+	@bash "$(CURDIR)/scripts/stop_discovery.sh"
+
+discovery-attach:
+	@tmux attach -t zora-discovery
+
+discovery-status:
+	@echo "--- ZORA discovery status ---"; \
+	if [ -f "$(DISCOVERY_SCHED_PID_FILE)" ] && kill -0 "$$(cat $(DISCOVERY_SCHED_PID_FILE))" 2>/dev/null; then \
+		printf "%-6s running (PID %s)\n" "SCHED:" "$$(cat $(DISCOVERY_SCHED_PID_FILE))"; \
+	else \
+		printf "%-6s not running\n" "SCHED:"; \
+	fi

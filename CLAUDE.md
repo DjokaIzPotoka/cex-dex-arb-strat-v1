@@ -103,16 +103,23 @@ UNI/USDC was removed: no pool with meaningful liquidity exists for it on either 
 
 ## MEV Discovery Subsystem (`discovery/`)
 
-A separate, broad-coverage MEV opportunity discovery pipeline (Python + ClickHouse) — not part of the CEX-DEX paper trading pipeline described above, and not yet a running service (Phase 1a is a one-shot script; the tiered scheduler comes in a later phase). Full design: `docs/mev-discovery-plan.md`.
+A separate, broad-coverage MEV opportunity discovery pipeline (Python + ClickHouse) — not part of the CEX-DEX paper trading pipeline described above. Full design: `docs/mev-discovery-plan.md`. Phase 1 (all 4 DEX venues + all 5 CEX exchanges, `known_entities`/`new_entity_events` detection, and the Tier 1 scheduler) is complete as of Phase 1e; Tier 2 promotion/demotion, DEX-side rate limiting, and the RPC state provider are Phase 1f/1g/1h, not yet built.
 
 ```bash
-make discovery-build   # venv + ClickHouse (docker compose) + migrations
-make discovery-test    # one-shot Orca Whirlpool snapshot (validation + broad pull)
+make discovery-build              # venv + ClickHouse (docker compose) + migrations
+make discovery-test-<source>      # one-shot snapshot for a single provider (e.g. discovery-test-orca, discovery-test-binance) -- see Makefile for the full list (4 DEX + 5 CEX)
+make discovery-test-entity-detection  # one-shot detection pass over whatever's currently in the snapshot tables
+make discovery-start              # launches the Tier 1 scheduler in its own tmux session ('zora-discovery', separate from ZORA's 'zora' session)
+make discovery-stop               # stops it
+make discovery-status             # PID check
+make discovery-attach             # re-attach to the tmux session
 ```
 
-Key files: `discovery/src/providers/base.py` (provider Protocols), `discovery/src/providers/orca_rest.py` (Orca adapter), `discovery/http_client.py` (shared User-Agent + retry/backoff — venue APIs behind Cloudflare, like Orca's, 403 requests without a browser-like User-Agent; reuse this for new REST providers instead of rediscovering that), `discovery/src/run_orca_snapshot.py` (one-shot entrypoint).
+Key files: `discovery/src/providers/base.py` (DEX provider Protocols: `PoolMetadataProvider`/`PoolStateProvider`/`PoolVolumeProvider`), `discovery/src/providers/cex_base.py` (CEX `SymbolProvider` Protocol), `discovery/src/providers/{orca_rest,raydium_amm_v4,raydium_clmm,meteora_dlmm}.py` (DEX adapters; the two Raydium ones share `raydium_common.py`), `discovery/src/providers/{binance,bybit,okx,bitget,gateio}_symbols.py` (CEX adapters), `discovery/rate_limiter.py` (generic `TokenBucket`, used by all 5 CEX providers — DEX providers don't have proactive rate limiting yet, Phase 1f), `discovery/http_client.py` (shared User-Agent + retry/backoff — venue APIs behind Cloudflare, like Orca's, 403 requests without a browser-like User-Agent), `discovery/src/detection.py` (`detect_new_entities()` — the `known_entities`/`new_entity_events` check-then-insert registry pattern, section 3.6), `discovery/src/scheduler.py` (Tier 1 continuous 5-min-cycle scheduler, section 3.2 — sequential across all 9 sources, per-source failure isolation, runs detection against each cycle's own fresh rows), `discovery/src/run_*_snapshot.py` / `run_entity_detection.py` (one-shot manual-run entrypoints, one per provider plus detection).
 
-**Provider convention** (design doc section 3.3): a REST provider implements all three provider Protocols (`PoolMetadataProvider`, `PoolStateProvider`, `PoolVolumeProvider`), since a venue's own REST endpoint typically returns metadata, price, and volume together in one call. An RPC provider (e.g. a future `getMultipleAccounts`-based one) implements `PoolStateProvider` only — raw on-chain account state gives price/active_liquidity but not the off-chain-aggregated `volume_24h_usd`.
+**Provider convention** (design doc section 3.3): a REST provider implements all three DEX provider Protocols (`PoolMetadataProvider`, `PoolStateProvider`, `PoolVolumeProvider`), since a venue's own REST endpoint typically returns metadata, price, and volume together in one call. An RPC provider (e.g. a future `getMultipleAccounts`-based one) implements `PoolStateProvider` only — raw on-chain account state gives price/active_liquidity but not the off-chain-aggregated `volume_24h_usd`. CEX providers implement a single `SymbolProvider` Protocol (`cex_base.py`) instead of the three-way DEX split — an exchange's `exchangeInfo`-shaped endpoint returns symbol/base/quote/status together, with no analogue to the DEX side's differing update cadences.
+
+**ClickHouse HTTP field-size gotcha**: ClickHouse's HTTP interface enforces a per-form-field byte-size cap on parameterized-query bind values (confirmed empirically against a live 24.8 server: an `Array(String)` bind of ~1700 identifiers, ~77KB, succeeded in one query; ~4000 identifiers, ~178KB, failed with `HTML Form Exception: Field value too long` — consistent with Poco's ~128KiB default field-value limit). `clickhouse-connect`'s automatic GET→POST-form fallback for large bind params doesn't route around this, since the cap is enforced server-side on the field itself. `detect_new_entities()` in `detection.py` chunks its existence-check `IN`-list at `EXISTENCE_CHECK_CHUNK_SIZE` (1000 identifiers) to stay under it — keep this in mind before passing any large `Array(...)`-typed bind parameter to ClickHouse elsewhere in this subsystem.
 
 ## Environment
 
