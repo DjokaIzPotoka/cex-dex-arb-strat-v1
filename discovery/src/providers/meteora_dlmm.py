@@ -53,6 +53,20 @@ Confirmed empirically (2026-08-03) against the live API:
   than Orca/Raydium's ~0.8% but present), same `symbol or ""` handling
   applies.
 
+Rate limiting (Phase 1f retrofit, docs/mev-discovery-plan.md section
+5.1/5.4): Meteora is the one DEX venue with a clearly published, fixed
+number -- 30 req/s globally per the DLMM API, section 5.1's table
+notes it as the only DEX with a clearly published number, easiest to
+plan capacity for. Margined to 90% per section 5.4 point 1:
+BUCKET_CAPACITY = 30 * 0.9 = 27 req/s. A full unbounded broad pull is
+only ~24-26 pages (this venue's universe is ~1700-1800 kept pools at
+page_size=1000, plus ghosts on the same pages -- pagination is by
+page, not by kept-row count, so page count tracks total pool count,
+not post-filter count), so this bucket -- like Orca's and Raydium's --
+sits far above the provider's natural pull rate and never meaningfully
+throttles a normal cycle; it's a safety ceiling, not an active
+constraint at Tier 1's polling frequency.
+
 Fee semantics (see FEE_NOTE below for the full reasoning): DLMM
 exposes two separate fee numbers per pool -- `pool_config.base_fee_pct`
 (the pool's static fee tier, fixed at pool creation, tied to its
@@ -68,6 +82,7 @@ from typing import Iterator, Optional, Sequence
 import requests
 
 from discovery.http_client import DEFAULT_TIMEOUT_S, build_session
+from discovery.rate_limiter import TokenBucket
 from discovery.src.logger import Level, log
 from discovery.src.normalize import TokenSide, canonicalize
 from discovery.src.providers.base import PoolMetadata, PoolState, PoolVolume
@@ -77,6 +92,13 @@ DEFAULT_PAGE_SIZE = 1000
 REQUEST_TIMEOUT_S = DEFAULT_TIMEOUT_S
 
 VENUE = "meteora_dlmm"
+
+# Section 5.1's published 30 req/s, margined to 90% per section 5.4
+# point 1 -- see module docstring's "Rate limiting" paragraph.
+PUBLISHED_LIMIT_PER_S = 30
+SAFETY_MARGIN = 0.90
+BUCKET_CAPACITY = PUBLISHED_LIMIT_PER_S * SAFETY_MARGIN
+BUCKET_REFILL_PERIOD_S = 1.0
 
 # raw["pool_config"]["base_fee_pct"] is a percent number (0.04 == 0.04%
 # == 4 bps, 0.25 == 0.25% == 25 bps); fee_bps is out of 10_000, so
@@ -235,10 +257,12 @@ class MeteoraDlmmRestProvider:
     PoolVolumeProvider against Meteora's DLMM REST API.
     """
 
-    def __init__(self, session: Optional[requests.Session] = None):
+    def __init__(self, session: Optional[requests.Session] = None, bucket: Optional[TokenBucket] = None):
         self._session = session or build_session()
+        self._bucket = bucket or TokenBucket(BUCKET_CAPACITY, BUCKET_REFILL_PERIOD_S)
 
     def get_pool(self, pool_address: str) -> MeteoraPoolRow:
+        self._bucket.consume()
         resp = self._session.get(
             f"{API_BASE}/pools/{pool_address}", timeout=REQUEST_TIMEOUT_S
         )
@@ -281,6 +305,7 @@ class MeteoraDlmmRestProvider:
             params: dict = {"page_size": page_size, "page": page}
             if query:
                 params["query"] = query
+            self._bucket.consume()
             resp = self._session.get(
                 f"{API_BASE}/pools", params=params, timeout=REQUEST_TIMEOUT_S
             )

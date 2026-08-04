@@ -16,6 +16,25 @@ Confirmed empirically (2026-08-03) against the live API:
 - The full Whirlpool universe is ~142k pools across ~142 pages at
   size=1000, ~85s wall-clock for a full walk. That's an accepted cost
   for this phase's one-shot script, not something to optimize yet.
+
+Rate limiting (Phase 1f retrofit, docs/mev-discovery-plan.md section
+5.1/5.4): Orca is the one DEX venue with no published rate limit at
+all -- section 5.1's table lists it as "Nedefinisan broj, IP-implicitan
+... Osloniti se na exponential backoff pri 429" (undefined, IP-implicit;
+rely on exponential backoff at 429, which discovery/http_client.py's
+build_session() already provides). DEFAULT_BUCKET_CAPACITY below is
+therefore a judgment call, not a documented limit being margined down
+the way Meteora's or Raydium's is -- picked conservatively (a handful
+of req/s) specifically so it sits *above* this provider's natural
+pull rate (one full unbounded walk is ~100-120 pages over ~60-90s,
+i.e. roughly 1.3-2 req/s sustained) rather than actively throttling
+normal operation. It exists as a safety ceiling against a pathological
+case (e.g. a bug causing a tight retry loop), not as a cap this
+provider is expected to bump against in practice. Same TokenBucket
+mechanism and per-provider-instance ownership pattern as every CEX
+provider (see e.g. binance_symbols.py) -- one call costs one token,
+no per-endpoint weight concept exists for this API the way Binance's
+request-weight does.
 """
 from __future__ import annotations
 
@@ -25,6 +44,7 @@ from typing import Iterator, Optional, Sequence
 import requests
 
 from discovery.http_client import DEFAULT_TIMEOUT_S, build_session
+from discovery.rate_limiter import TokenBucket
 from discovery.src.logger import Level, log
 from discovery.src.normalize import TokenSide, canonicalize
 from discovery.src.providers.base import PoolMetadata, PoolState, PoolVolume
@@ -34,6 +54,14 @@ DEFAULT_PAGE_SIZE = 1000
 REQUEST_TIMEOUT_S = DEFAULT_TIMEOUT_S
 
 VENUE = "orca_whirlpool"
+
+# No published limit for this venue (see module docstring) -- a
+# conservative default, not a margined-down documented number. 5 req/s
+# sustained comfortably clears this provider's observed natural pace
+# (~1.3-2 req/s during a full broad pull) without becoming the
+# cycle's bottleneck.
+DEFAULT_BUCKET_CAPACITY = 5.0
+DEFAULT_BUCKET_REFILL_PERIOD_S = 1.0
 
 # Orca's feeRate is out of FEE_RATE_MUL_VALUE = 1_000_000; fee_bps is
 # out of 10_000. feeRate / 100 converts one to the other. Verified
@@ -169,10 +197,12 @@ class OrcaRestProvider:
     PoolVolumeProvider against Orca's Whirlpool REST API.
     """
 
-    def __init__(self, session: Optional[requests.Session] = None):
+    def __init__(self, session: Optional[requests.Session] = None, bucket: Optional[TokenBucket] = None):
         self._session = session or build_session()
+        self._bucket = bucket or TokenBucket(DEFAULT_BUCKET_CAPACITY, DEFAULT_BUCKET_REFILL_PERIOD_S)
 
     def get_pool(self, pool_address: str) -> OrcaPoolRow:
+        self._bucket.consume()
         resp = self._session.get(
             f"{API_BASE}/pools/{pool_address}", timeout=REQUEST_TIMEOUT_S
         )
@@ -194,6 +224,7 @@ class OrcaRestProvider:
             params: dict = {"size": page_size}
             if cursor:
                 params["after"] = cursor
+            self._bucket.consume()
             resp = self._session.get(
                 f"{API_BASE}/pools", params=params, timeout=REQUEST_TIMEOUT_S
             )

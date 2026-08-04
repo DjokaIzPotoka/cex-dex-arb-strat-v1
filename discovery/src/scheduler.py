@@ -3,20 +3,34 @@
 3.2: continuous 5-minute cycles across the full DEX+CEX universe (all
 9 sources, no filtering beyond section 3.7's "obvious ghosts only"),
 each cycle followed by entity detection (section 3.6) on that cycle's
-own fresh data. This is Phase 1e's scope -- Tier 2 promotion/demotion
-(age-based/growth-based hot pools), proactive rate limiting on the DEX
-side, and the RPC-based state provider are explicitly out of scope
-here (Phase 1f/1g/1h, per this session's task boundary).
+own fresh data. Originally Phase 1e's scope; Phase 1f (a later session)
+retrofitted TokenBucket rate limiting onto the 4 DEX providers (see
+orca_rest.py/raydium_common.py/meteora_dlmm.py's own "Rate limiting"
+docstring sections) -- all 9 sources now share the same mechanism.
+Tier 2 promotion/demotion (age-based/growth-based hot pools) and the
+RPC-based state provider are still out of scope here (Phase 1g/1h).
 
 Design choices worth calling out:
 
-- Sequential execution, not concurrent (stronger than section 5.4's
-  general spirit): DEX providers don't have proactive token-bucket
-  rate limiting yet -- only the 5 CEX providers do (from their own
-  earlier sessions). Running all 9 sources sequentially is the safe
-  default until Phase 1f retrofits uniform rate limiting; concurrent
-  execution today could fire an unthrottled burst at a DEX API with no
-  client-side guard at all.
+- Sequential execution, not concurrent. Originally (Phase 1e) this was
+  a stopgap forced by the DEX providers having no rate limiting at all
+  -- concurrent execution then could fire an unthrottled burst at a
+  DEX API with no client-side guard whatsoever. That specific reason
+  is gone as of Phase 1f: all 9 sources now own a TokenBucket sized
+  per docs/mev-discovery-plan.md section 5.1/5.4, so nothing here would
+  blow through a rate limit merely by running concurrently.
+  TODO(concurrency decision, not this session): sequential execution
+  is still what runs today -- switching to concurrent is a deliberate
+  choice deferred on purpose, not attempted here, because it needs its
+  own testing (thread-safety of the provider/session objects built
+  fresh per cycle, ClickHouse client concurrent-write behavior, and
+  the Raydium AMM v4/CLMM same-host caveat raydium_common.py's
+  docstring calls out -- two independent per-provider buckets are only
+  safe *because* they're never drawn from concurrently today; running
+  them concurrently would need those two providers to share one
+  bucket instead). Nothing about *this* session's retrofit should be
+  read as recommending the switch, only as removing the one blocker
+  that made sequential execution non-optional.
 
 - Per-source failure isolation (section 5.4 point 5): each of the 9
   sources runs inside its own try/except (_run_dex_source /

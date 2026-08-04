@@ -26,6 +26,48 @@ session, now confirmed to hold for CLMM too:
 - Missing symbol shows up here too (34/4216 CLMM pools sampled, same
   ~0.8% order of magnitude as AMM v4's 23/15000 and Orca's ~0.8%) --
   same `symbol or ""` handling applies unchanged.
+
+Rate limiting (Phase 1f retrofit, docs/mev-discovery-plan.md section
+5.1/5.4): section 5.1's table gives Raydium "~120 req/min orijentaciono
+za transakcione endpointe (nezvaničan savet)" -- an unofficial
+orientation figure, and one explicitly scoped to transaction endpoints
+in the source note, not this module's read-only /pools/info/* calls.
+It's still the closest published number for this venue, so per this
+session's instruction it's used as-is, margined to 90% per section
+5.4 point 1: RAYDIUM_BUCKET_CAPACITY = 120 * 0.9 = 108 req/min.
+
+Verified empirically (not just reasoned about) that this doesn't
+become AMM v4's cycle bottleneck: a full unbounded broad pull is
+~225-235 /pools/info/list calls (page_size=1000 against a
+~225k-235k-pool live universe). Two live back-to-back full pulls
+compared directly -- one against this real 108/min bucket, one against
+an effectively unlimited bucket -- took 116.56s and 109.87s
+respectively: only 6.69s (6.1%) slower with real rate limiting in
+place, not the much larger figure a naive steady-state calculation
+suggests (that naive math -- treating the whole post-burst tail as
+gated at the bucket's minimum 0.556s/token spacing -- overstates the
+effect, because the bucket keeps refilling *while* each network call
+is in flight rather than sitting idle between calls). CLMM's own pull
+is far smaller (~5 calls/cycle) and never comes close to binding
+either. Both comfortably clear the 5-minute cycle window with room to
+spare.
+
+AMM v4 and CLMM are two separate provider instances (RaydiumAmmV4RestProvider,
+RaydiumClmmRestProvider) that both hit this exact same api-v3 host, but
+each gets its OWN independent TokenBucket (constructed in
+RaydiumApiV3RestProviderBase.__init__, same per-provider-instance
+ownership pattern every CEX provider already uses -- see e.g.
+binance_symbols.py). That's only correct because scheduler.py runs all
+9 sources sequentially (see that module's docstring): AMM v4's ~225-235
+calls finish completely before CLMM's ~5 start, so the two buckets are
+never actually drawn from at the same time, and the real request rate
+this host ever sees stays under 108/min regardless. If a future
+decision moves the scheduler to concurrent execution, this stops being
+safe -- two independent 108/min buckets running at once could together
+push up to ~216/min at this one host, double the margined figure. At
+that point these two providers should share a single TokenBucket
+instance (e.g. passed in explicitly by whatever constructs them) rather
+than each defaulting to its own.
 """
 from __future__ import annotations
 
@@ -35,6 +77,7 @@ from typing import Callable, Iterator, Optional, Sequence
 import requests
 
 from discovery.http_client import DEFAULT_TIMEOUT_S, build_session
+from discovery.rate_limiter import TokenBucket
 from discovery.src.logger import Level, log
 from discovery.src.normalize import TokenSide, canonicalize
 from discovery.src.providers.base import PoolMetadata, PoolState, PoolVolume
@@ -47,6 +90,14 @@ REQUEST_TIMEOUT_S = DEFAULT_TIMEOUT_S
 # conservative and aligned with the RPC getMultipleAccounts convention
 # CLAUDE.md already documents (batch up to 100 addresses per call).
 IDS_BATCH_LIMIT = 100
+
+# Section 5.1's ~120 req/min orientation figure, margined to 90% per
+# section 5.4 point 1 -- see module docstring for the same-host/
+# independent-buckets caveat this applies under.
+PUBLISHED_LIMIT_PER_MIN = 120
+SAFETY_MARGIN = 0.90
+BUCKET_CAPACITY = PUBLISHED_LIMIT_PER_MIN * SAFETY_MARGIN
+BUCKET_REFILL_PERIOD_S = 60.0
 
 # raw["feeRate"] is a fraction (0.0025 == 0.25%, 0.0005 == 0.05%);
 # fee_bps is out of 10_000. Verified against RAY/USDC (feeRate=0.0025
@@ -189,8 +240,9 @@ class RaydiumApiV3RestProviderBase:
     VENUE: str
     POOL_TYPE: str
 
-    def __init__(self, session: Optional[requests.Session] = None):
+    def __init__(self, session: Optional[requests.Session] = None, bucket: Optional[TokenBucket] = None):
         self._session = session or build_session()
+        self._bucket = bucket or TokenBucket(BUCKET_CAPACITY, BUCKET_REFILL_PERIOD_S)
 
     def _compute_active_liquidity(self, tvl_usd: float) -> float:
         raise NotImplementedError
@@ -208,6 +260,7 @@ class RaydiumApiV3RestProviderBase:
         addresses = list(pool_addresses)
         for i in range(0, len(addresses), IDS_BATCH_LIMIT):
             chunk = addresses[i : i + IDS_BATCH_LIMIT]
+            self._bucket.consume()
             resp = self._session.get(
                 f"{API_BASE}/pools/info/ids",
                 params={"ids": ",".join(chunk)},
@@ -267,6 +320,7 @@ class RaydiumApiV3RestProviderBase:
                 "pageSize": page_size,
                 "page": page,
             }
+            self._bucket.consume()
             resp = self._session.get(
                 f"{API_BASE}/pools/info/list", params=params, timeout=REQUEST_TIMEOUT_S
             )
