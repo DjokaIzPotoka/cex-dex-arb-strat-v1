@@ -209,6 +209,30 @@ class OrcaRestProvider:
         resp.raise_for_status()
         return _parse_raw_pool(resp.json()["data"])
 
+    def get_pools(self, pool_addresses: Sequence[str]) -> list[OrcaPoolRow]:
+        """No multi-address batch endpoint exists for this venue
+        (same situation as Meteora's get_pools -- see that method's
+        docstring) -- one GET per address, each failure isolated to
+        that one pool rather than poisoning a whole batch. Added in
+        Phase 1g for Tier 2's 1-minute polling (docs/mev-discovery-plan.md
+        section 3.2), which needs to re-fetch a small, specific set of
+        currently-hot pool_addresses on every poll -- get_pool alone
+        would work but forces the caller to loop and catch exceptions
+        itself; centralizing that here matches every other provider's
+        get_pools shape (RaydiumApiV3RestProviderBase.get_pools,
+        MeteoraDlmmRestProvider.get_pools).
+        """
+        rows: list[OrcaPoolRow] = []
+        for addr in pool_addresses:
+            try:
+                rows.append(self.get_pool(addr))
+            except (requests.HTTPError, KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
+                log(
+                    Level.WARN,
+                    [("event", "parse_skip"), ("pool", addr), ("err", str(exc))],
+                )
+        return rows
+
     def list_pools(
         self, page_size: int = DEFAULT_PAGE_SIZE, max_pages: Optional[int] = None
     ) -> Iterator[OrcaPoolRow]:
