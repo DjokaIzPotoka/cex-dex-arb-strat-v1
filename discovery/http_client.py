@@ -31,11 +31,20 @@ def build_session(
     user_agent: str = DEFAULT_USER_AGENT,
     retry_total: int = DEFAULT_RETRY_TOTAL,
     backoff_factor: float = DEFAULT_BACKOFF_FACTOR,
+    allowed_methods: tuple[str, ...] = ("GET",),
 ) -> requests.Session:
     """A requests.Session preconfigured with a User-Agent header and
-    retry/backoff for GET requests. Build one per provider instance and
-    reuse it across calls (connection pooling) rather than calling this
-    per-request.
+    retry/backoff. Build one per provider instance and reuse it across
+    calls (connection pooling) rather than calling this per-request.
+
+    `allowed_methods` defaults to GET-only, matching every existing
+    REST provider's usage (idempotent reads only, so blanket retry is
+    safe). solana_rpc_state.py is the first caller that needs POST
+    included: Solana's JSON-RPC interface is POST-only, and
+    getMultipleAccounts specifically is a read (no state mutation), so
+    retrying it on a transient failure is exactly as safe as retrying a
+    GET -- this parameter exists so that caller can opt in without
+    loosening the default for every other provider's session.
     """
     session = requests.Session()
     session.headers["User-Agent"] = user_agent
@@ -44,7 +53,7 @@ def build_session(
         total=retry_total,
         backoff_factor=backoff_factor,
         status_forcelist=RETRYABLE_STATUS_CODES,
-        allowed_methods=("GET",),
+        allowed_methods=allowed_methods,
         raise_on_status=False,
     )
     adapter = HTTPAdapter(max_retries=retry)

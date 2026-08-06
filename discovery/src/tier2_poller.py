@@ -2,9 +2,21 @@
 3.2: "Poolovi promovisani u ovaj tier... 1 min [kadenca]". Re-polls
 whatever's currently hot (Tier2State.current_hot_pools(), the union of
 age-based and growth-based membership) between Tier 1's 5-minute
-sweeps, via the exact same REST providers Tier 1 uses -- this session
-deliberately does NOT build an RPC-based state-only fast path (that's
-Phase 1h, per this session's explicit scope).
+sweeps.
+
+As of Phase 1h (this session), Orca Whirlpool and Raydium CLMM hot
+pools go through solana_rpc_state.py's batched `getMultipleAccounts`
+RPC provider for `price_native`/`active_liquidity` instead of the
+one-request-per-pool REST call this module used through Phase 1g --
+see that module's docstring, and _poll_venue_via_rpc below, for the
+hybrid design (RPC for state on this 1-min cadence, REST-derived
+metadata/volume carried forward from ClickHouse rather than
+re-fetched, per section 3.3). Raydium AMM v4 and Meteora DLMM are
+unaffected -- still REST `get_pools()`, same as every prior phase; AMM
+v4 was never the bottleneck (its `active_liquidity` is exactly
+`tvl_usd` by construction, no RPC decoding buys anything there), and
+Meteora's bin-based state is explicitly out of scope for this session
+(see solana_rpc_state.py's docstring).
 
 Per-venue poll batch is capped (MAX_POOLS_PER_VENUE_PER_POLL) and
 rotates round-robin through a large hot set rather than always trying
@@ -13,23 +25,27 @@ original design: age-based seeding from new_entity_events'
 full-72h history (Tier2State.age_based.seed_from_history, called once
 at scheduler startup) can produce thousands of "hot" pools per venue
 in a real deployment -- observed live, one seed produced 5558
-orca_whirlpool entries alone. Orca and Meteora have no batch pool
-lookup endpoint (one HTTP GET per pool_address, see each provider's
-get_pools docstring), so an uncapped poll pass tries to make
-one-request-per-pool against Orca's conservative 5 req/s bucket:
+orca_whirlpool entries alone. Before Phase 1h, Orca and Meteora had no
+batch pool lookup endpoint (one HTTP GET per pool_address, see each
+REST provider's get_pools docstring), so an uncapped poll pass tried
+one-request-per-pool against Orca's conservative 5 req/s REST bucket:
 5558/5 ~= 1112s (~18.5 minutes) for Orca's share alone, which is
 exactly what happened the first time this ran live against real
 history -- the whole scheduler process appeared hung for ~19 minutes,
 blocked inside a single maybe_poll() call, before this cap was added.
-Capping and rotating means a very large hot set doesn't get refreshed
-in full every single ~60s interval (each pool gets re-polled roughly
-every `ceil(hot_count / MAX_POOLS_PER_VENUE_PER_POLL)` poll passes,
-not every pass) -- a real, documented degradation under REST-only
-Tier 2 at this scale, not a hidden one. This is precisely the gap
-docs/mev-discovery-plan.md section 3.3 designed the future RPC
-PoolStateProvider to close (`getMultipleAccounts`, batch up to 100
-addresses per call, no per-pool HTTP round-trip at all) -- Phase 1h,
-out of this session's scope, not attempted here.
+The cap stays in place even now that Orca/CLMM go through RPC
+(MAX_POOLS_PER_VENUE_PER_POLL is still real ceiling on getMultipleAccounts'
+own per-call batch limit and on ClickHouse write volume per poll, and
+Meteora's REST path still has the original per-pool-HTTP-call
+bottleneck this cap was built for). Capping and rotating means a very
+large hot set doesn't get refreshed in full every single ~60s interval
+(each pool gets re-polled roughly every
+`ceil(hot_count / MAX_POOLS_PER_VENUE_PER_POLL)` poll passes, not every
+pass) -- for Meteora specifically this is still a real, documented
+degradation at scale, not a hidden one; for Orca/CLMM, Phase 1h's RPC
+batching means a single getMultipleAccounts call already covers a full
+100-pool batch in one round trip, so the practical cadence hit from
+capping is far smaller there than it was under REST.
 
 Cadence is best-effort, not a hard real-time guarantee, and that's a
 deliberate tradeoff worth stating plainly rather than overselling:
@@ -62,28 +78,44 @@ assumed here.
 from __future__ import annotations
 
 import datetime
+import os
 import time
 from typing import Optional
 
 from discovery.src.logger import Level, log
+from discovery.src.normalize import STABLE_SYMBOLS
 from discovery.src.providers.meteora_dlmm import MeteoraDlmmRestProvider
-from discovery.src.providers.orca_rest import OrcaRestProvider
 from discovery.src.providers.raydium_amm_v4 import RaydiumAmmV4RestProvider
-from discovery.src.providers.raydium_clmm import RaydiumClmmRestProvider
+from discovery.src.providers.solana_rpc_state import (
+    VENUE_ORCA,
+    VENUE_RAYDIUM_CLMM,
+    OrcaWhirlpoolRpcStateProvider,
+    RaydiumClmmRpcStateProvider,
+)
 from discovery.src.tier2 import Tier2State
 
 TIER2_POLL_SRC = "T2P"
 TIER2_POLL_INTERVAL_S = 60.0
 
-# Sized so even the slowest venue (Orca, 5 req/s, one HTTP call per
-# pool -- see module docstring) finishes one poll pass in ~20s, well
+# Sized so even the slowest REST venue (Meteora, one HTTP call per
+# pool -- see module docstring) finishes one poll pass comfortably
 # under TIER2_POLL_INTERVAL_S, instead of the ~18.5 minutes an
 # uncapped pass against a large real hot set took live (see module
-# docstring for the incident this constant exists because of).
+# docstring for the incident this constant exists because of). Also
+# doubles as the RPC path's per-call getMultipleAccounts batch size
+# (that method's own hard cap -- see solana_rpc_state.py).
 MAX_POOLS_PER_VENUE_PER_POLL = 100
 
+# Venues whose Tier 2 state polling goes through solana_rpc_state.py's
+# batched RPC provider (Phase 1h) instead of REST get_pools(). Meteora
+# DLMM's bin-based state and Raydium AMM v4 (no RPC benefit -- see
+# module docstring) stay REST-only.
+RPC_VENUES = {VENUE_ORCA, VENUE_RAYDIUM_CLMM}
 
-def build_tier2_providers() -> dict[str, object]:
+DEFAULT_SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com"
+
+
+def build_tier2_providers(rpc_url: Optional[str] = None) -> dict[str, object]:
     """Long-lived provider instances, constructed once at scheduler
     startup and reused for every poll over the process's lifetime --
     deliberately unlike scheduler.py's Tier 1 providers, which are
@@ -93,12 +125,23 @@ def build_tier2_providers() -> dict[str, object]:
     own reasons, not something Tier 2 needs to inherit) -- a bucket
     that persists across the whole run lets its capacity naturally
     reflect real sustained usage instead of resetting to full every 5
-    minutes regardless of how much was actually consumed.
+    minutes regardless of how much was actually consumed. This also
+    matters specifically for solana_rpc_state.py's providers: their
+    mint-decimals cache (see that module's docstring) is only useful
+    at all if the instance survives across polls, not just within one.
+
+    `rpc_url` defaults to `SOLANA_RPC_URL` from the environment (same
+    convention as rpc.rs::build_client and
+    run_raydium_snapshot.py::main), falling back to the public mainnet
+    endpoint if unset -- see scripts/zora_discovery.sh for why that env
+    var must actually be present by the time this runs in production
+    (it now sources .env, same as scripts/zora.sh already did).
     """
+    rpc_url = rpc_url or os.environ.get("SOLANA_RPC_URL") or DEFAULT_SOLANA_RPC_URL
     return {
-        "orca_whirlpool": OrcaRestProvider(),
+        VENUE_ORCA: OrcaWhirlpoolRpcStateProvider(rpc_url),
         "raydium_amm_v4": RaydiumAmmV4RestProvider(),
-        "raydium_clmm": RaydiumClmmRestProvider(),
+        VENUE_RAYDIUM_CLMM: RaydiumClmmRpcStateProvider(rpc_url),
         "meteora_dlmm": MeteoraDlmmRestProvider(),
     }
 
@@ -111,10 +154,16 @@ class Tier2Poller:
     why this is checked inline rather than run on its own thread.
     """
 
-    def __init__(self, client, tier2_state: Tier2State, providers: Optional[dict[str, object]] = None):
+    def __init__(
+        self,
+        client,
+        tier2_state: Tier2State,
+        providers: Optional[dict[str, object]] = None,
+        rpc_url: Optional[str] = None,
+    ):
         self._client = client
         self._tier2_state = tier2_state
-        self._providers = providers or build_tier2_providers()
+        self._providers = providers or build_tier2_providers(rpc_url)
         self._last_poll_monotonic: Optional[float] = None
         # Round-robin cursor per venue, into that venue's *sorted*
         # current hot-pool list -- sorted so the window is stable
@@ -185,20 +234,23 @@ class Tier2Poller:
                     src=TIER2_POLL_SRC,
                 )
 
-            try:
-                pool_rows = provider.get_pools(batch)
-            except Exception as exc:  # noqa: BLE001 -- same failure-isolation contract as scheduler.py's Tier 1 sources
-                log(
-                    Level.ERROR,
-                    [("event", "poll_source_FAILED"), ("venue", venue), ("pool_count", str(len(batch))), ("err", str(exc))],
-                    src=TIER2_POLL_SRC,
-                )
-                continue
+            if venue in RPC_VENUES:
+                rows = self._poll_venue_via_rpc(venue, provider, batch, snapshot_ts)
+            else:
+                try:
+                    pool_rows = provider.get_pools(batch)
+                except Exception as exc:  # noqa: BLE001 -- same failure-isolation contract as scheduler.py's Tier 1 sources
+                    log(
+                        Level.ERROR,
+                        [("event", "poll_source_FAILED"), ("venue", venue), ("pool_count", str(len(batch))), ("err", str(exc))],
+                        src=TIER2_POLL_SRC,
+                    )
+                    continue
 
-            rows = []
-            for pool_row in pool_rows:
-                tier, hot_reason = self._tier2_state.tier_and_reason(venue, pool_row.pool_address)
-                rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
+                rows = []
+                for pool_row in pool_rows:
+                    tier, hot_reason = self._tier2_state.tier_and_reason(venue, pool_row.pool_address)
+                    rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
 
             if rows:
                 columns = list(rows[0].keys())
@@ -218,6 +270,119 @@ class Tier2Poller:
             src=TIER2_POLL_SRC,
         )
         return {"hot_pools": len(hot_pools), "rows_written": rows_written}
+
+    def _fetch_latest_known_rows(self, venue: str, pool_addresses: list[str]) -> dict[str, dict]:
+        """Latest known REST-derived row per pool_address (from
+        whatever Tier 1's last successful pull wrote to
+        dex_pool_snapshots), for carrying forward base_mint/
+        base_symbol/quote_mint/quote_symbol/fee_bps/tvl_usd/
+        volume_24h_usd into an RPC-sourced row -- see
+        _poll_venue_via_rpc. `pool_addresses` is at most
+        MAX_POOLS_PER_VENUE_PER_POLL (100) per call, well under the
+        ~1000-identifier threshold where CLAUDE.md's documented
+        ClickHouse HTTP Array(String) field-size limit starts to
+        matter (see detection.py's EXISTENCE_CHECK_CHUNK_SIZE), so no
+        chunking is needed here.
+        """
+        if not pool_addresses:
+            return {}
+        result = self._client.query(
+            """
+            SELECT pool_address, base_mint, base_symbol, quote_mint, quote_symbol, fee_bps, tvl_usd, volume_24h_usd
+            FROM dex_pool_snapshots
+            WHERE venue = {venue:String} AND pool_address IN {addresses:Array(String)}
+              AND (pool_address, snapshot_ts) IN (
+                  SELECT pool_address, max(snapshot_ts) FROM dex_pool_snapshots
+                  WHERE venue = {venue:String} AND pool_address IN {addresses:Array(String)}
+                  GROUP BY pool_address
+              )
+            """,
+            parameters={"venue": venue, "addresses": pool_addresses},
+        )
+        known: dict[str, dict] = {}
+        for pool_address, base_mint, base_symbol, quote_mint, quote_symbol, fee_bps, tvl_usd, volume_24h_usd in result.result_rows:
+            known[pool_address] = {
+                "base_mint": base_mint,
+                "base_symbol": base_symbol,
+                "quote_mint": quote_mint,
+                "quote_symbol": quote_symbol,
+                "fee_bps": fee_bps,
+                "tvl_usd": tvl_usd,
+                "volume_24h_usd": volume_24h_usd,
+            }
+        return known
+
+    def _poll_venue_via_rpc(self, venue: str, provider, batch: list[str], snapshot_ts: datetime.datetime) -> list[dict]:
+        """RPC path for hot pools on an RPC-covered venue (Orca
+        Whirlpool, Raydium CLMM -- see solana_rpc_state.py): fetches
+        fresh price_native/active_liquidity via getMultipleAccounts,
+        and combines it with each pool's most recent REST-derived
+        metadata/volume row from ClickHouse -- the hybrid design
+        section 3.3 calls for (RPC state on this 1-min cadence, REST
+        volume/metadata on Tier 1's 5-min baseline, not refetched
+        here). price_usd is recomputed fresh from the new price_native
+        (not carried forward stale) using the same
+        quote-is-a-stablecoin convention every REST provider already
+        uses (see e.g. orca_rest.py's own price_usd comment).
+        """
+        known = self._fetch_latest_known_rows(venue, batch)
+        missing = [addr for addr in batch if addr not in known]
+        if missing:
+            # Shouldn't happen in steady state: a pool only becomes
+            # Tier 2-hot after Tier 1 has already written at least one
+            # REST-derived row for it (age-based promotion is fed by
+            # detect_new_entities, itself downstream of a Tier 1 REST
+            # pull; growth-based promotion needs a *prior* row to
+            # compute growth against at all -- see tier2.py's
+            # GrowthBasedRegistry.evaluate()). Logged rather than
+            # silently dropped so a real gap (e.g. pruned ClickHouse
+            # data) stays visible instead of just quietly under-polling.
+            log(
+                Level.WARN,
+                [("event", "rpc_poll_skip_no_known_row"), ("venue", venue), ("count", str(len(missing)))],
+                src=TIER2_POLL_SRC,
+            )
+
+        addresses = list(known.keys())
+        if not addresses:
+            return []
+
+        base_mint_by_pool = {addr: row["base_mint"] for addr, row in known.items()}
+        try:
+            states = provider.fetch_state(addresses, base_mint_by_pool)
+        except Exception as exc:  # noqa: BLE001 -- same failure-isolation contract as the REST path
+            log(
+                Level.ERROR,
+                [("event", "poll_source_FAILED"), ("venue", venue), ("pool_count", str(len(addresses))), ("err", str(exc))],
+                src=TIER2_POLL_SRC,
+            )
+            return []
+
+        rows = []
+        for state in states:
+            known_row = known[state.pool_address]
+            tier, hot_reason = self._tier2_state.tier_and_reason(venue, state.pool_address)
+            price_usd = state.price_native if known_row["quote_symbol"] in STABLE_SYMBOLS else None
+            rows.append(
+                {
+                    "snapshot_ts": snapshot_ts,
+                    "venue": venue,
+                    "pool_address": state.pool_address,
+                    "base_mint": known_row["base_mint"],
+                    "base_symbol": known_row["base_symbol"],
+                    "quote_mint": known_row["quote_mint"],
+                    "quote_symbol": known_row["quote_symbol"],
+                    "fee_bps": known_row["fee_bps"],
+                    "tvl_usd": known_row["tvl_usd"],
+                    "active_liquidity": state.active_liquidity,
+                    "volume_24h_usd": known_row["volume_24h_usd"],
+                    "price_native": state.price_native,
+                    "price_usd": price_usd,
+                    "tier": tier,
+                    "hot_reason": hot_reason,
+                }
+            )
+        return rows
 
     def _next_batch(self, venue: str, growth_addresses: list[str], age_addresses: list[str]) -> list[str]:
         """Returns up to MAX_POOLS_PER_VENUE_PER_POLL addresses for

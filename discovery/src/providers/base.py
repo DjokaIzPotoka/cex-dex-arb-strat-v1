@@ -10,14 +10,18 @@ three equally well:
     PoolVolumeProvider     -- aggregated: volume_24h_usd, TVL, computed
                                by an off-chain indexer from swap history
 
-This split matters starting in Tier 2 (Phase 1b+): a future RPC
-provider (`getMultipleAccounts`) can implement PoolStateProvider alone
--- it can decode price/active_liquidity directly from account bytes,
-but not volume_24h_usd, which raw account state simply doesn't carry.
-A REST provider (this phase's OrcaRestProvider) implements all three,
-because a venue's own aggregation endpoint returns them together in a
-single call. Deliberately not generalized further than this
-three-way split (YAGNI, per the doc's own note in 3.3).
+This split matters starting in Tier 2: an RPC provider
+(`getMultipleAccounts`) can implement PoolStateProvider alone -- it can
+decode price/active_liquidity directly from account bytes, but not
+volume_24h_usd, which raw account state simply doesn't carry. As of
+Phase 1h, this is no longer hypothetical -- see
+solana_rpc_state.py's OrcaWhirlpoolRpcStateProvider/
+RaydiumClmmRpcStateProvider, used by tier2_poller.py for Tier 2 hot
+pools on those two venues. A REST provider (e.g. OrcaRestProvider)
+implements all three, because a venue's own aggregation endpoint
+returns them together in a single call. Deliberately not generalized
+further than this three-way split (YAGNI, per the doc's own note in
+3.3).
 """
 from __future__ import annotations
 

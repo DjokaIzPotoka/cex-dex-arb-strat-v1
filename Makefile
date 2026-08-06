@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-start discovery-stop discovery-status discovery-attach
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-test-rpc-crosscheck discovery-start discovery-stop discovery-status discovery-attach
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -149,6 +149,20 @@ discovery-test-gateio:
 # least once first, otherwise this has nothing to check.
 discovery-test-entity-detection:
 	@$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_entity_detection.py
+
+# --- Tier 2 RPC PoolStateProvider (Phase 1h) ---
+# Three-way cross-check (REST vs. live Rust production code vs. this
+# new Python RPC provider) for solana_rpc_state.py -- see that
+# module's docstring and run_rpc_state_crosscheck.py's own docstring.
+# Needs the Rust validation binary built first (not part of the normal
+# `make build`/`make rebuild` targets -- see that binary's own
+# docstring for why it's standalone), and SOLANA_RPC_URL from .env
+# (falls back to the public endpoint otherwise, same as
+# discovery-test-raydium).
+discovery-test-rpc-crosscheck:
+	@cd "$(CURDIR)/ingestor-dex-solana" && cargo build --release --bin live_price_check
+	@set -a; [ -f "$(CURDIR)/.env" ] && . "$(CURDIR)/.env"; set +a; \
+	$(DISCOVERY_VENV)/bin/python3 $(DISCOVERY_DIR)/src/run_rpc_state_crosscheck.py
 
 # --- Tier 1 scheduler (Phase 1e) ---
 # Same naming/behavior convention as start/stop/status/attach above,

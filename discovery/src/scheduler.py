@@ -11,12 +11,19 @@ into the cycle). Originally Phase 1e's scope (Tier 1 loop); Phase 1f
 (a later session) retrofitted TokenBucket rate limiting onto the 4 DEX
 providers (see orca_rest.py/raydium_common.py/meteora_dlmm.py's own
 "Rate limiting" docstring sections) -- all 9 sources now share the
-same mechanism. This session (Phase 1g) adds Tier 2 promotion/
-demotion and its 1-minute polling, still via the same REST providers
-Tier 1 uses (see tier2_poller.py's docstring for why, and for the
-"best-effort ~1-minute cadence, not a hard guarantee" tradeoff this
-implies). The RPC-based state provider (a faster, cheaper path for
-Tier 2 specifically) is still out of scope here -- Phase 1h.
+same mechanism. Phase 1g added Tier 2 promotion/demotion and its
+1-minute polling, via the same REST providers Tier 1 uses (see
+tier2_poller.py's docstring for the "best-effort ~1-minute cadence,
+not a hard guarantee" tradeoff this implies -- still true). Phase 1h
+(this session) replaced Tier 2's REST state polling with an RPC-based
+PoolStateProvider for Orca Whirlpool and Raydium CLMM specifically
+(solana_rpc_state.py, batched `getMultipleAccounts`) -- see
+tier2_poller.py's module docstring for the hybrid RPC-state/
+REST-volume design this scheduler now gets for free via
+build_tier2_providers() (this module doesn't construct Tier 2's
+providers itself, so no change was needed here beyond this docstring).
+Raydium AMM v4 and Meteora DLMM still go through REST for Tier 2, same
+as before.
 
 Design choices worth calling out:
 

@@ -26,6 +26,20 @@ DISCOVERY_VENV="$ROOT/discovery/.venv"
 PYTHON_BIN="$DISCOVERY_VENV/bin/python3"
 SCHEDULER_SCRIPT="$ROOT/discovery/src/scheduler.py"
 
+# Loads SOLANA_RPC_URL (and anything else) from .env if present -- same
+# convention as scripts/zora.sh. Needed as of Phase 1h: the scheduler's
+# Tier 2 poller now builds solana_rpc_state.py's RPC providers
+# (tier2_poller.py::build_tier2_providers), which read SOLANA_RPC_URL
+# to avoid falling back to the public, more heavily rate-limited
+# endpoint. Silently a no-op if .env doesn't exist (e.g. a fresh
+# checkout) -- discovery still starts, just against the public
+# fallback, same as any Rust-side script that doesn't find .env either.
+if [ -f "$ROOT/.env" ]; then
+    set -a
+    source "$ROOT/.env"
+    set +a
+fi
+
 SCHED_PID_FILE="/tmp/zora_discovery_sched.pid"
 # Unlike CEX_LOG/DEX_LOG in zora.sh (which live in /tmp), this lives in
 # the project directory and is never truncated on start -- same

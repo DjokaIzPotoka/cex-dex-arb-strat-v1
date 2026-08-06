@@ -176,15 +176,21 @@ def _parse_raw_pool(raw: dict) -> OrcaPoolRow:
         quote_symbol=quote.symbol,
         fee_bps=fee_bps,
         tvl_usd=tvl_usd,
-        # TODO(Phase 1h): replace with true active_liquidity (likvidnost
-        # in the currently active tick range), decoded from raw
-        # on-chain `liquidity` against the pool's sqrt-price -- that's
-        # the Tier 2 RPC PoolStateProvider's job (see section 3.3),
-        # not built yet. Until then, REST-only Tier 1 rows use tvl_usd
-        # as a placeholder, same as the schema note's AMM v4 case --
-        # acceptable for CLMM here only because Phase 1a doesn't yet
-        # act on this field, not because the two are actually
-        # equivalent for a concentrated-liquidity pool.
+        # tvl_usd placeholder, still real for THIS row: Tier 1's own
+        # REST pull never decodes raw on-chain `liquidity` (Orca's API
+        # doesn't expose it as a distinct field, and there's no reason
+        # for a 5-minute-cadence baseline pull to pay for an extra RPC
+        # round-trip just for this). True active_liquidity (likvidnost
+        # in the currently active tick range) IS now decoded, but only
+        # for Tier 2 hot pools, via solana_rpc_state.py's RPC
+        # PoolStateProvider (Phase 1h, section 3.3) -- see
+        # tier2_poller.py's _poll_venue_via_rpc, which overwrites this
+        # placeholder with the true value before writing a Tier-2-hot
+        # pool's row. A pool that's never promoted to Tier 2 keeps this
+        # placeholder in every row it ever gets, same as before Phase
+        # 1h -- acceptable because Phase 1a/1g don't act on this field
+        # outside Tier 2, not because the two are actually equivalent
+        # for a concentrated-liquidity pool.
         active_liquidity=tvl_usd,
         volume_24h_usd=volume_24h_usd,
         price_native=price_native,
