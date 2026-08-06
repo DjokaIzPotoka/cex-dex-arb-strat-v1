@@ -145,6 +145,19 @@ class Tier2Poller:
             log(Level.INFO, [("event", "poll_skipped"), ("reason", "no_hot_pools")], src=TIER2_POLL_SRC)
             return {"hot_pools": 0, "rows_written": 0}
 
+        # Split by mechanism, not just by venue: growth-based membership
+        # is prioritized whole into every batch (see _next_batch's
+        # docstring for why), so it needs to stay a separate list from
+        # age-based rather than being pre-merged into one undifferentiated
+        # per-venue rotation the way current_hot_pools() merges them.
+        growth_by_venue: dict[str, list[str]] = {}
+        for venue, pool_address in self._tier2_state.growth_based.hot_keys():
+            growth_by_venue.setdefault(venue, []).append(pool_address)
+
+        age_by_venue: dict[str, list[str]] = {}
+        for venue, pool_address in self._tier2_state.age_based.hot_keys():
+            age_by_venue.setdefault(venue, []).append(pool_address)
+
         by_venue: dict[str, list[str]] = {}
         for venue, pool_address in hot_pools:
             by_venue.setdefault(venue, []).append(pool_address)
@@ -158,7 +171,7 @@ class Tier2Poller:
             if provider is None:
                 continue  # shouldn't happen -- every DEX venue has a Tier 2 provider -- but never crash the poll over it
 
-            batch = self._next_batch(venue, addresses)
+            batch = self._next_batch(venue, growth_by_venue.get(venue, []), age_by_venue.get(venue, []))
             if len(batch) < len(addresses):
                 log(
                     Level.INFO,
@@ -166,6 +179,7 @@ class Tier2Poller:
                         ("event", "poll_batch_capped"),
                         ("venue", venue),
                         ("hot_total", str(len(addresses))),
+                        ("growth_total", str(len(growth_by_venue.get(venue, [])))),
                         ("this_batch", str(len(batch))),
                     ],
                     src=TIER2_POLL_SRC,
@@ -205,26 +219,63 @@ class Tier2Poller:
         )
         return {"hot_pools": len(hot_pools), "rows_written": rows_written}
 
-    def _next_batch(self, venue: str, addresses: list[str]) -> list[str]:
+    def _next_batch(self, venue: str, growth_addresses: list[str], age_addresses: list[str]) -> list[str]:
         """Returns up to MAX_POOLS_PER_VENUE_PER_POLL addresses for
-        `venue` this call, advancing that venue's round-robin cursor
-        so the *next* call picks up where this one left off -- see
-        module docstring for why an uncapped pass is unsafe at scale.
-        Sorted first for a stable, deterministic window (the input is
-        built from a Python set each poll, so its iteration order
-        isn't itself stable across calls).
+        `venue` this call.
+
+        Growth-based pools go in first, in full, every single call --
+        that set is expected to stay small (section 3.2's continuous
+        re-scoring only keeps actively-spiking pools hot, unlike
+        age-based's fixed 72h window over the whole new-pool backlog),
+        and growth-based hotness (a live volume/TVL spike or a new CEX
+        listing) is exactly the kind of signal Tier 2's 1-minute
+        cadence exists to catch promptly. Age-based pools then fill
+        whatever budget remains, round-robining through the backlog
+        exactly as before.
+
+        Before this split, both sets were pre-merged into one
+        undifferentiated per-venue rotation (current_hot_pools()'s
+        union) and round-robined together -- live validation found
+        age-based backlogs outnumber growth-based hot pools by roughly
+        230x per venue, so a growth-based pool's turn in a capped
+        batch came up only once every ~230/MAX_POOLS_PER_VENUE_PER_POLL
+        rotations, i.e. almost never got polled at 1-minute cadence at
+        all. Splitting means growth-based pools are no longer subject
+        to the round-robin cursor -- they're in every batch, every
+        poll, regardless of how large the age-based backlog is.
+
+        Sorted first (both lists) for a stable, deterministic window --
+        the inputs are built from Python sets each poll, so iteration
+        order isn't itself stable across calls.
         """
-        if len(addresses) <= MAX_POOLS_PER_VENUE_PER_POLL:
-            return addresses
-        ordered = sorted(addresses)
-        offset = self._venue_offset.get(venue, 0) % len(ordered)
-        end = offset + MAX_POOLS_PER_VENUE_PER_POLL
-        if end <= len(ordered):
-            batch = ordered[offset:end]
+        # Defensive cap: growth-based is expected to stay well under
+        # MAX_POOLS_PER_VENUE_PER_POLL, but if it somehow doesn't, it
+        # must not be allowed to silently starve age-based of its
+        # entire budget the same way the old undifferentiated rotation
+        # let age-based starve growth-based.
+        growth_batch = sorted(set(growth_addresses))[:MAX_POOLS_PER_VENUE_PER_POLL]
+        remaining_budget = MAX_POOLS_PER_VENUE_PER_POLL - len(growth_batch)
+
+        # Dedupe against growth_batch: a pool can be hot in both
+        # registries at once (tier2.py's Tier2State docstring), and
+        # polling the same address twice in one batch would double-
+        # count it in rows_written and waste rate-limiter budget.
+        age_only = sorted(set(age_addresses) - set(growth_batch))
+        if remaining_budget <= 0 or not age_only:
+            return growth_batch
+
+        if len(age_only) <= remaining_budget:
+            age_batch = age_only
         else:
-            # Wrap around: take the tail, then the head, so the
-            # rotation covers the whole list evenly instead of
-            # stalling at the boundary.
-            batch = ordered[offset:] + ordered[: end - len(ordered)]
-        self._venue_offset[venue] = end % len(ordered)
-        return batch
+            offset = self._venue_offset.get(venue, 0) % len(age_only)
+            end = offset + remaining_budget
+            if end <= len(age_only):
+                age_batch = age_only[offset:end]
+            else:
+                # Wrap around: take the tail, then the head, so the
+                # rotation covers the whole list evenly instead of
+                # stalling at the boundary.
+                age_batch = age_only[offset:] + age_only[: end - len(age_only)]
+            self._venue_offset[venue] = end % len(age_only)
+
+        return growth_batch + age_batch

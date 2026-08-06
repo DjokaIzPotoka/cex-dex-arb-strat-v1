@@ -182,6 +182,15 @@ class AgeBasedRegistry:
     def is_hot(self, venue: str, pool_address: str) -> bool:
         return (venue, pool_address) in self._expires_at
 
+    def hot_keys(self) -> set[tuple[str, str]]:
+        """Public snapshot of current membership -- tier2_poller.py
+        needs this set separately from GrowthBasedRegistry's (rather
+        than only the pre-merged union current_hot_pools() below
+        provides) to prioritize growth-based pools in its per-venue
+        batch selection. See tier2_poller.py's _next_batch().
+        """
+        return set(self._expires_at.keys())
+
     def __len__(self) -> int:
         return len(self._expires_at)
 
@@ -201,6 +210,13 @@ class GrowthBasedRegistry:
     def hot_reason(self, venue: str, pool_address: str) -> Optional[str]:
         entry = self._entries.get((venue, pool_address))
         return entry.hot_reason if entry else None
+
+    def hot_keys(self) -> set[tuple[str, str]]:
+        """Public snapshot of current membership -- see
+        AgeBasedRegistry.hot_keys()'s docstring for why tier2_poller.py
+        needs this split out from the merged union.
+        """
+        return set(self._entries.keys())
 
     def __len__(self) -> int:
         return len(self._entries)
@@ -361,9 +377,7 @@ class Tier2State:
         """Union of both registries' current membership -- what
         Tier 2's 1-minute poller (tier2_poller.py) actually polls.
         """
-        hot = set(self.age_based._expires_at.keys())  # noqa: SLF001 -- same module, deliberate internal access
-        hot.update(self.growth_based._entries.keys())  # noqa: SLF001
-        return hot
+        return self.age_based.hot_keys() | self.growth_based.hot_keys()
 
 
 def latest_dex_pools_by_base_symbol(client) -> dict[str, list[tuple[str, str]]]:
