@@ -59,6 +59,39 @@ result forever on `self` (a mint's decimals never change), so a given
 hot pool's mints are only ever resolved once across this process's
 whole lifetime, not once per Tier 2 poll.
 
+getMultipleAccounts batch size: Phase 1h's own validation (the
+three-way cross-check referenced above) only ever exercised
+single-address batches, so it never actually exercised this method at
+the size Tier 2 polling uses in production -- MAX_POOLS_PER_VENUE_PER_POLL
+(tier2_poller.py) is 100, and this module chunked at
+GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT=100 (the Solana JSON-RPC protocol's
+own documented cap for this method), meaning a full 100-pool venue
+batch went out as one 100-address call. Live Tier 2 operation surfaced
+HTTP 413 on exactly that call shape. Confirmed empirically against the
+real configured QuickNode endpoint (not assumed from documentation,
+same convention as every other rate-limit figure in this codebase):
+stepping down from 100 (100, 75, 50, 25, 15, 10 all failed, every
+time, with the identical body) surfaced QuickNode's own explicit
+error -- `{"code":-32615,"message":"getMultipleAccounts is limited to
+a 5 range, upgrade from discover plan..."}` -- and the boundary was
+then pinned exactly: 5 addresses succeeds consistently (multiple
+trials, real Orca/Raydium CLMM pool_addresses pulled from
+dex_pool_snapshots, not synthetic ones -- a fake/nonexistent address
+returns null account data and can't reproduce a size-driven failure
+the way a real one can), 6 fails consistently, same error every time.
+This is a plan-tier restriction on the specific API key configured for
+this deployment (QuickNode's free "Discover" tier, per their own error
+text and billing-page link), not a Solana RPC protocol limit --
+GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT (100) stays defined below as
+documentation of that actual protocol ceiling, but
+QUICKNODE_BATCH_LIMIT (4, one below the confirmed-working 5, same
+margin-below-a-confirmed-number convention as every other rate limit
+in this codebase) is what `_get_multiple_accounts_raw` actually chunks
+at. A hundred-pool Tier 2 poll batch for one venue now costs 25
+chunked calls instead of 1 -- see this session's summary for the
+timed, live-verified confirmation that this still comfortably fits
+inside the ~60s Tier 2 poll interval.
+
 Rate limiting: this session's live check (see this session's summary)
 found the configured SOLANA_RPC_URL host (QuickNode) documents a
 free/"Discover"-tier limit of 15 req/s
@@ -113,9 +146,29 @@ from discovery.src.providers.base import PoolState
 VENUE_ORCA = "orca_whirlpool"
 VENUE_RAYDIUM_CLMM = "raydium_clmm"
 
-# Solana JSON-RPC's own hard cap for getMultipleAccounts -- not a
-# convention this project chose, a limit the method enforces.
+# Solana JSON-RPC's own documented hard cap for getMultipleAccounts --
+# not a convention this project chose, a limit the *protocol* enforces.
+# Kept here as documentation of that ceiling; NOT what this module
+# actually chunks at -- see QUICKNODE_BATCH_LIMIT below and the module
+# docstring's "getMultipleAccounts batch size" section for why those
+# two numbers are very different in practice.
 GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT = 100
+
+# The QuickNode-specific constraint this module actually has to chunk
+# at, confirmed empirically against the live configured endpoint (see
+# module docstring): this deployment's API key/plan enforces a 5-address
+# ceiling per getMultipleAccounts call, well under the protocol's own
+# 100-address cap above. One below that confirmed-working boundary
+# (5 passed consistently, 6 failed consistently, every trial) as a
+# small safety margin -- same margin-below-a-confirmed-number
+# convention as this codebase's other rate limits (e.g. Meteora's/
+# Raydium's 90% margins), even though the absolute gap is necessarily
+# tiny here since the confirmed number itself is already small. This
+# is a QuickNode plan-tier restriction, not a Solana RPC protocol
+# limit -- upgrading the configured account's QuickNode plan would
+# raise this, at which point this constant (and the empirical test
+# behind it) should be re-run, not just bumped by guesswork.
+QUICKNODE_BATCH_LIMIT = 4
 
 # See module docstring's "Rate limiting" section for the 15 req/s
 # citation and the ~8.5 req/s combined-worst-case reasoning this is
@@ -316,16 +369,21 @@ class SolanaRpcStateProviderBase:
 
     def _get_multiple_accounts_raw(self, addresses: list[str]) -> dict[str, Optional[bytes]]:
         """Returns {address: raw_account_bytes_or_None (account not
-        found)}, batching in chunks of
-        GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT. A chunk-level RPC error
-        (malformed request, node-side failure) is logged and that
-        chunk's addresses are simply absent from the result -- same
+        found)}, batching in chunks of QUICKNODE_BATCH_LIMIT -- the
+        empirically-confirmed limit this deployment's endpoint actually
+        accepts, NOT GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT (the protocol's
+        own, much larger ceiling) -- see module docstring's
+        "getMultipleAccounts batch size" section for why those differ
+        and how QUICKNODE_BATCH_LIMIT was found. A chunk-level RPC
+        error (malformed request, node-side failure, a renewed 413 if
+        this constant is ever wrong again) is logged and that chunk's
+        addresses are simply absent from the result -- same
         failure-isolation shape as raydium_common.py's batch_skip, so
         one bad chunk doesn't take down pools in other chunks.
         """
         result: dict[str, Optional[bytes]] = {}
-        for i in range(0, len(addresses), GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT):
-            chunk = addresses[i : i + GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT]
+        for i in range(0, len(addresses), QUICKNODE_BATCH_LIMIT):
+            chunk = addresses[i : i + QUICKNODE_BATCH_LIMIT]
             self._bucket.consume()
             try:
                 resp = self._session.post(
