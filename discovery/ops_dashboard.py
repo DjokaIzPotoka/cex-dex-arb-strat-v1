@@ -37,6 +37,7 @@ import datetime
 import pathlib
 import re
 import sys
+from dataclasses import dataclass
 from typing import Optional
 
 import pandas as pd
@@ -46,6 +47,17 @@ from streamlit_autorefresh import st_autorefresh
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from discovery.src.db import get_client  # noqa: E402
+# Only the 4 hot_reason string constants -- tier2.py itself has no
+# provider/RPC construction to worry about pulling in (unlike
+# scheduler.py, see DEX_VENUES/CEX_EXCHANGES's own comment below), so
+# importing these directly avoids a 4th place these strings could
+# silently drift out of sync from tier2.py's own definitions.
+from discovery.src.tier2 import (  # noqa: E402
+    HOT_REASON_NEW_LISTING,
+    HOT_REASON_NEW_POOL,
+    HOT_REASON_TVL_SPIKE,
+    HOT_REASON_VOLUME_SPIKE,
+)
 
 REFRESH_INTERVAL_MS = 30_000
 
@@ -93,23 +105,60 @@ DEX_VENUES = ["orca_whirlpool", "raydium_amm_v4", "raydium_clmm", "meteora_dlmm"
 CEX_EXCHANGES = ["binance", "bybit", "okx", "bitget", "gateio"]
 ALL_SOURCES = DEX_VENUES + CEX_EXCHANGES
 
+# scheduler.py's own DEX_SRC/CEX_SRC 3-char tags, same duplication
+# rationale as ALL_SOURCES above -- used for the compact per-source
+# indicator row (see main()).
+SRC_TAG = {
+    "orca_whirlpool": "ORC",
+    "raydium_amm_v4": "RA4",
+    "raydium_clmm": "RCL",
+    "meteora_dlmm": "MET",
+    "binance": "BNC",
+    "bybit": "BYB",
+    "okx": "OKX",
+    "bitget": "BTG",
+    "gateio": "GTE",
+}
+
 # scripts/zora_discovery.sh's SCHED_LOG path -- mirrored, not derived
 # (that script is bash, this is Python; there's no shared config file
 # either reads from).
 SCHED_LOG_PATH = pathlib.Path(__file__).resolve().parents[1] / "logs" / "zora_discovery_sched.log"
 
-# How far back (lines) to scan the log for ERROR lines vs. how many of
-# those are actually shown -- scanning more than we show means a run
-# with occasional errors separated by long clean stretches still finds
-# its last ~20, not just whatever happens to be in a too-small window.
-LOG_SCAN_LINES = 5_000
+# How far back (lines) to scan the log, shared by every log-derived
+# metric on this page (error tail, cycle-duration history, the
+# getMultipleAccounts RPC-error counter, Meteora's cursor position --
+# see fetch_log_metrics, one tail read serves all four). Bumped from
+# the original 5_000 (sized only for "find the last ~20 ERROR lines"):
+# the RPC-error counter needs to find the CURRENT run's own
+# scheduler_start line, and Meteora's own ghost-pool parse_skip WARN
+# volume dominates this log's line count -- confirmed live, just 2
+# consecutive cycles produced ~67k lines end to end (grep'd
+# scheduler_start-to-scheduler_start on a real run), so even a first
+# guess of 50_000 measurably undershot "one recent run" in practice,
+# not just a hypothetical worst case. 150_000 lines (~15MB, ~230
+# chunked 64KB reads via _tail_lines -- still O(max_lines), never
+# O(file size), see that function's docstring) comfortably covers
+# several cycles/~30-45min of typical runtime, while staying fast
+# enough on local disk for a dashboard re-reading this on every 30s
+# autorefresh (see module docstring's "cheap per call" note) -- not
+# raised further than that without direct evidence it's still
+# insufficient in practice, since cost scales linearly with this
+# constant. Beyond this window (a run that's been up longer, or an
+# unusually log-heavy stretch), the RPC-error count is honestly
+# labeled as a lower bound for the scanned window rather than silently
+# understated as "since start" -- see fetch_log_metrics.
+LOG_SCAN_LINES = 150_000
 LOG_ERRORS_SHOWN = 20
+CYCLE_DURATIONS_SHOWN = 20
 
 # logger.py's format: "HH:MM:SS.mmm  LEVEL  SRC  key=value ...". LEVEL
 # is one of "INFO ", "WARN ", "ERROR" (Level enum values, all 5 chars)
 # -- \s+ splitting collapses the format string's literal double spaces,
 # so this matches regardless of that padding.
 LOG_LINE_RE = re.compile(r"^\S+\s+(\S+)\s+(\S+)\s+(.*)$")
+CYCLE_ELAPSED_RE = re.compile(r"elapsed_s=([\d.]+)")
+METEORA_CURSOR_RE = re.compile(r"start_page=(\d+).*end_page=(\d+).*total_pages=(\d+)")
 
 
 def _as_utc(dt: Optional[datetime.datetime]) -> Optional[datetime.datetime]:
@@ -429,36 +478,115 @@ def _is_error_line(line: str) -> bool:
     return bool(m) and m.group(1) == "ERROR"
 
 
-def fetch_recent_errors(log_path: pathlib.Path) -> tuple[Optional[list[str]], Optional[str]]:
-    """Returns (error_lines, failure_reason) -- exactly one of the two
-    is non-None/non-empty-meaningful: a populated failure_reason means
-    the log itself couldn't be read at all (missing file, permission
-    error), NOT "no errors found" -- those are different states and
-    the UI must not conflate them (never fabricate a status either
-    way, per this session's own instruction).
+@dataclass
+class LogMetrics:
+    """Everything this page derives from the scheduler log, in one
+    place -- see fetch_log_metrics.
     """
+
+    error_lines: Optional[list[str]]
+    failure_reason: Optional[str]
+    cycle_durations_s: list[float]
+    rpc_error_count: int
+    rpc_error_count_is_lower_bound: bool
+    meteora_cursor: Optional[str]
+
+
+def fetch_log_metrics(log_path: pathlib.Path) -> LogMetrics:
+    """One tail read serves every log-derived metric on this page --
+    the ERROR-line tail, per-cycle duration history (for the
+    stability line chart), the getMultipleAccounts RPC-error counter,
+    and Meteora's current cursor position -- rather than re-reading
+    the log once per metric. Still only ever reads backward from EOF
+    (see _tail_lines), never the whole file, even across a full 48h
+    run.
+
+    `failure_reason` set (log missing/unreadable) means every other
+    field is a placeholder empty/zero value, NOT "confirmed clean" --
+    the UI must not conflate "nothing found" with "couldn't look",
+    same distinction the original single-purpose error-tail version of
+    this function made.
+    """
+    empty = LogMetrics(None, None, [], 0, False, None)
     if not log_path.exists():
-        return None, f"log file not found at {log_path} -- has the scheduler ever been started?"
+        return LogMetrics(
+            None, f"log file not found at {log_path} -- has the scheduler ever been started?", [], 0, False, None
+        )
     try:
         lines = _tail_lines(log_path, LOG_SCAN_LINES)
     except OSError as exc:
-        return None, f"failed to read log file: {exc}"
-    error_lines = [ln for ln in lines if _is_error_line(ln)]
-    return error_lines[-LOG_ERRORS_SHOWN:], None
+        return LogMetrics(None, f"failed to read log file: {exc}", [], 0, False, None)
+    if not lines:
+        return empty
+
+    error_lines = [ln for ln in lines if _is_error_line(ln)][-LOG_ERRORS_SHOWN:]
+
+    # cycle_durations_s intentionally reads the FULL scanned window,
+    # not scoped to the current run -- a stability trend line is more
+    # useful spanning a recent restart than artificially truncated to
+    # "since start", unlike the RPC-error counter below (which section
+    # 5's own scope explicitly ties to "since the scheduler's current
+    # start").
+    cycle_durations_s: list[float] = []
+    for ln in lines:
+        if "event=cycle_done" in ln:
+            m = CYCLE_ELAPSED_RE.search(ln)
+            if m:
+                cycle_durations_s.append(float(m.group(1)))
+    cycle_durations_s = cycle_durations_s[-CYCLE_DURATIONS_SHOWN:]
+
+    # Only lines at or after the most recent scheduler_start belong to
+    # the CURRENT run -- found by scanning backward from EOF (the same
+    # direction _tail_lines itself reads in), so this is the LAST
+    # scheduler_start in the file, matching "current start" exactly.
+    start_idx = None
+    for i in range(len(lines) - 1, -1, -1):
+        if "event=scheduler_start" in lines[i]:
+            start_idx = i
+            break
+    scoped_lines = lines[start_idx:] if start_idx is not None else lines
+    is_lower_bound = start_idx is None  # scheduler_start itself wasn't within the scanned window
+
+    # "getMultipleAccounts request failed" is _get_multiple_accounts_raw's
+    # own exact error-message prefix (solana_rpc_state.py) -- matches
+    # every getMultipleAccounts-level failure (413s and otherwise),
+    # deliberately NOT the broader "event=poll_source_FAILED" (which
+    # also fires for Meteora/Raydium AMM v4's unrelated Tier 2 REST
+    # failures -- see tier2_poller.py's _poll_once()).
+    rpc_error_count = sum(1 for ln in scoped_lines if "getMultipleAccounts request failed" in ln)
+
+    meteora_cursor = None
+    for ln in reversed(scoped_lines):
+        if "event=meteora_cursor_slice" in ln:
+            m = METEORA_CURSOR_RE.search(ln)
+            if m:
+                meteora_cursor = f"pages {m.group(1)}-{m.group(2)} of {m.group(3)}"
+            break
+
+    return LogMetrics(error_lines, None, cycle_durations_s, rpc_error_count, is_lower_bound, meteora_cursor)
 
 
 # --- UI ----------------------------------------------------------------
 
 
+STATUS_EMOJI = {"ok": "\U0001f7e2", "pending": "\U0001f7e1", "STOPPED": "\U0001f534"}  # green/yellow/red circles
+
+
 def main() -> None:
+    # layout="wide" (item 1) + every section below sized to fit one
+    # normal desktop screen without scrolling (item scope: layout only,
+    # no query-logic changes -- every function called here is unchanged
+    # from the version already validated last session).
     st.set_page_config(page_title="ZORA Discovery Ops", layout="wide")
     st_autorefresh(interval=REFRESH_INTERVAL_MS, key="autorefresh")
 
-    st.title("ZORA MEV Discovery -- Ops Dashboard")
-    st.caption(
-        "Read-only. Auto-refreshes every "
-        f"{REFRESH_INTERVAL_MS // 1000}s. Does not control the scheduler -- "
-        "use `make discovery-attach`/`discovery-stop` for that."
+    st.markdown(
+        "##### ZORA MEV Discovery -- Ops Dashboard "
+        f"<span style='font-weight:normal;font-size:0.7em;color:gray'>"
+        f"read-only, auto-refreshes every {REFRESH_INTERVAL_MS // 1000}s, "
+        "does not control the scheduler (`make discovery-attach`/`discovery-stop` for that)"
+        "</span>",
+        unsafe_allow_html=True,
     )
 
     try:
@@ -474,99 +602,129 @@ def main() -> None:
         tier2_summary = fetch_tier2_summary(client)
         new_entity_count = fetch_new_entity_count_since(client, test_start)
         recent_new_entities = fetch_recent_new_entities(client)
+        log_metrics = fetch_log_metrics(SCHED_LOG_PATH)
     except Exception as exc:  # noqa: BLE001 -- a dashboard must degrade to a visible error, never crash silently
         st.error(f"Failed to query ClickHouse: {exc}")
         st.stop()
 
-    # --- (a) health badge ---
     level, reason, status_by_source = compute_health_from_row_counts(cycle_row_counts, previous_ts, current_ts)
+
+    # --- top row: health badge + cycle age + test uptime, front and center (item 2) ---
     badge = {"green": st.success, "yellow": st.warning, "red": st.error}[level]
     badge(f"**{level.upper()}** -- {reason}")
 
-    # --- (b) uptime / cycle age ---
-    col1, col2, col3, col4 = st.columns(4)
+    m1, m2, m3, m4 = st.columns(4)
+    if current_ts is not None:
+        cycle_age_min = (now - current_ts).total_seconds() / 60
+        m1.metric(
+            "Cycle age",
+            f"{cycle_age_min:.1f}m",
+            help=(
+                "Time since the CURRENT (completed) cycle's shared snapshot_ts -- "
+                "one value for all 9 sources, NOT a per-source fetch-recency "
+                "measure (see fetch_last_two_snapshot_ts's docstring). A cycle "
+                "now runs ~8-8.5min, so ~0-9min here is normal."
+            ),
+        )
+    else:
+        m1.metric("Cycle age", "n/a", help="no cycle has completed yet")
     if test_start is not None:
         uptime = now - test_start
-        col1.metric("Test uptime", f"{uptime.days}d {uptime.seconds // 3600}h {(uptime.seconds % 3600) // 60}m")
-        col1.caption(f"since {test_start.isoformat()} (min snapshot_ts across both tables)")
-    else:
-        col1.metric("Test uptime", "n/a")
-        col1.caption("no rows in dex_pool_snapshots or cex_symbol_snapshots yet")
-    if current_ts is not None:
-        cycle_age = now - current_ts
-        col2.metric("Cycle age", f"{cycle_age.total_seconds() / 60:.1f}m")
-        col2.caption(
-            "time since the CURRENT cycle's shared snapshot_ts -- one value for "
-            "all 9 sources (they're stamped identically at cycle start), NOT a "
-            "per-source fetch-recency measure. A single cycle now runs "
-            "~8-8.5min, so ~0-9min here is normal, not stale."
+        m2.metric(
+            "Test uptime",
+            f"{uptime.days}d {uptime.seconds // 3600}h {(uptime.seconds % 3600) // 60}m",
+            help=f"since {test_start.isoformat()} (min snapshot_ts across both tables)",
         )
     else:
-        col2.metric("Cycle age", "n/a")
-        col2.caption("no cycle has completed yet")
-    col3.metric("new_entity_events since test start", new_entity_count)
+        m2.metric("Test uptime", "n/a", help="no rows in either snapshot table yet")
     ok_count = sum(1 for status in status_by_source.values() if status == "ok")
-    col4.metric("Sources active this cycle", f"{ok_count}/{len(ALL_SOURCES)}")
-    col4.caption('a source not yet "ok" may just have missed one cycle -- see the table below')
-
-    # --- (c) per-source table ---
-    st.subheader("Per-source status")
-    st.caption(
-        "\"status\" is based on whether each source wrote rows in the current "
-        "and previous COMPLETED cycle (see \"Cycle age\" above for why a "
-        "timestamp-based staleness column isn't shown here): ok = wrote rows "
-        "in the current completed cycle; pending = wrote 0 rows this "
-        "completed cycle but wrote in the one before -- could be a one-off "
-        "blip, being watched, not yet a confirmed problem; STOPPED = wrote 0 "
-        "rows in BOTH the current and previous completed cycle, a real "
-        "problem regardless of where the source sits in the execution order."
+    m3.metric(
+        "Sources active",
+        f"{ok_count}/{len(ALL_SOURCES)}",
+        help='"ok" this cycle -- a source showing "pending" below may just be a one-off blip, not yet a confirmed problem',
     )
-    rows = []
-    for kind, sources in (("DEX", DEX_VENUES), ("CEX", CEX_EXCHANGES)):
-        for src in sources:
-            ts = freshness.get(src)
-            rows.append(
-                {
-                    "source": src,
-                    "kind": kind,
-                    "status": status_by_source.get(src, "pending"),
-                    "rows this cycle": cycle_row_counts.get(src, {}).get(current_ts, 0) if current_ts else 0,
-                    "rows previous cycle": cycle_row_counts.get(src, {}).get(previous_ts, 0) if previous_ts else 0,
-                    "last write ever (UTC)": ts.isoformat(sep=" ", timespec="seconds") if ts else "never",
-                    "rows since test start": row_counts_since_start.get(src, 0),
-                }
-            )
-    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    m4.metric("new_entity_events", new_entity_count, help="since test start (min snapshot_ts across both tables)")
 
-    # --- (d) Tier 2 summary ---
-    st.subheader("Tier 2 summary (current tier/hot_reason, latest row per pool)")
-    if tier2_summary:
-        st.dataframe(
-            pd.DataFrame(tier2_summary, columns=["tier", "hot_reason", "pool_count"]),
-            hide_index=True,
-            width="stretch",
+    # --- getMultipleAccounts RPC-error counter (item 5a): visually prominent, not buried ---
+    rpc_scope = "since scheduler start" if not log_metrics.rpc_error_count_is_lower_bound else f"in the last {LOG_SCAN_LINES:,} log lines (scheduler_start not found further back)"
+    if log_metrics.failure_reason is not None:
+        st.warning(f"getMultipleAccounts RPC errors: unknown -- {log_metrics.failure_reason}")
+    elif log_metrics.rpc_error_count == 0:
+        st.success(f"✅ getMultipleAccounts RPC errors {rpc_scope}: **0**")
+    else:
+        st.error(f"⚠️ getMultipleAccounts RPC errors {rpc_scope}: **{log_metrics.rpc_error_count}**")
+
+    # --- per-source status: one compact row of 9 indicators (item 3) ---
+    indicator_line = "  ".join(
+        f"{STATUS_EMOJI[status_by_source.get(src, 'pending')]}{SRC_TAG[src]}" for src in ALL_SOURCES
+    )
+    st.markdown(f"##### {indicator_line}")
+    not_ok = [f"{SRC_TAG[src]}: {status_by_source[src]}" for src in ALL_SOURCES if status_by_source.get(src) != "ok"]
+    meteora_cursor_note = f"Meteora cursor: {log_metrics.meteora_cursor or 'n/a (no slice yet this run)'}"
+    st.caption(("all sources ok" if not not_ok else " · ".join(not_ok)) + f"&nbsp;&nbsp;|&nbsp;&nbsp;{meteora_cursor_note}")
+
+    st.divider()
+
+    # --- two-column section (item 4): cycle-duration chart + Tier 2 hot-pool counts ---
+    left, right = st.columns(2)
+    with left:
+        st.markdown(f"**Cycle duration, last {len(log_metrics.cycle_durations_s)} cycles (s)**")
+        if log_metrics.cycle_durations_s:
+            st.line_chart(pd.DataFrame({"elapsed_s": log_metrics.cycle_durations_s}), height=180)
+        else:
+            st.caption("no cycle_done lines in the scanned log window yet")
+    with right:
+        st.markdown("**Tier 2 hot pools by reason**")
+        hot_counts = {hot_reason: 0 for hot_reason in (HOT_REASON_NEW_POOL, HOT_REASON_VOLUME_SPIKE, HOT_REASON_TVL_SPIKE, HOT_REASON_NEW_LISTING)}
+        for tier, hot_reason, pool_count in tier2_summary:
+            if tier == "hot" and hot_reason in hot_counts:
+                hot_counts[hot_reason] = pool_count
+        h1, h2, h3, h4 = st.columns(4)
+        h1.metric("new_pool", hot_counts[HOT_REASON_NEW_POOL])
+        h2.metric("volume_spike", hot_counts[HOT_REASON_VOLUME_SPIKE])
+        h3.metric("tvl_spike", hot_counts[HOT_REASON_TVL_SPIKE])
+        h4.metric("new_listing", hot_counts[HOT_REASON_NEW_LISTING])
+
+    # --- collapsed detail sections (item 6) ---
+    d1, d2 = st.columns(2)
+    with d1:
+        with st.expander(f"Per-source detail table ({len(ALL_SOURCES)} sources)"):
+            rows = []
+            for kind, sources in (("DEX", DEX_VENUES), ("CEX", CEX_EXCHANGES)):
+                for src in sources:
+                    ts = freshness.get(src)
+                    rows.append(
+                        {
+                            "source": src,
+                            "kind": kind,
+                            "status": status_by_source.get(src, "pending"),
+                            "rows this cycle": cycle_row_counts.get(src, {}).get(current_ts, 0) if current_ts else 0,
+                            "rows previous cycle": cycle_row_counts.get(src, {}).get(previous_ts, 0) if previous_ts else 0,
+                            "last write ever (UTC)": ts.isoformat(sep=" ", timespec="seconds") if ts else "never",
+                            "rows since test start": row_counts_since_start.get(src, 0),
+                        }
+                    )
+            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        with st.expander(f"new_entity_events ({new_entity_count} since test start, showing 10 most recent overall)"):
+            if recent_new_entities:
+                df = pd.DataFrame(recent_new_entities, columns=["entity_type", "venue", "identifier", "detected_ts"])
+                st.dataframe(df, hide_index=True, width="stretch")
+            else:
+                st.caption("no rows in new_entity_events yet")
+    with d2:
+        error_summary = (
+            f"log unreadable -- {log_metrics.failure_reason}"
+            if log_metrics.failure_reason is not None
+            else ("no errors" if not log_metrics.error_lines else f"{len(log_metrics.error_lines)} error(s) -- expand for detail")
         )
-    else:
-        st.info("no rows in dex_pool_snapshots yet")
-
-    # --- (e) new_entity_events ---
-    st.subheader("Recent new_entity_events (10 most recent overall)")
-    if recent_new_entities:
-        df = pd.DataFrame(recent_new_entities, columns=["entity_type", "venue", "identifier", "detected_ts"])
-        st.dataframe(df, hide_index=True, width="stretch")
-    else:
-        st.info("no rows in new_entity_events yet")
-
-    # --- (f) recent problems (log tail) ---
-    st.subheader(f"Recent problems (last {LOG_ERRORS_SHOWN} ERROR lines, scanning last {LOG_SCAN_LINES} log lines)")
-    error_lines, failure_reason = fetch_recent_errors(SCHED_LOG_PATH)
-    if failure_reason is not None:
-        st.warning(failure_reason)
-    elif not error_lines:
-        st.success("no problems in visible log window")
-    else:
-        st.code("\n".join(reversed(error_lines)), language=None)
-        st.caption(f"showing {len(error_lines)} line(s), most recent first, from {SCHED_LOG_PATH}")
+        with st.expander(f"Recent problems: {error_summary}"):
+            if log_metrics.failure_reason is not None:
+                st.warning(log_metrics.failure_reason)
+            elif not log_metrics.error_lines:
+                st.caption(f"no ERROR lines in the last {LOG_SCAN_LINES:,} scanned log lines")
+            else:
+                st.code("\n".join(reversed(log_metrics.error_lines)), language=None)
+                st.caption(f"most recent first, from {SCHED_LOG_PATH}")
 
 
 if __name__ == "__main__":
