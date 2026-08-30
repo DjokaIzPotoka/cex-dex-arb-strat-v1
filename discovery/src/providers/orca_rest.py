@@ -150,14 +150,35 @@ def _parse_raw_pool(raw: dict) -> OrcaPoolRow:
     token_a = TokenSide(mint=raw["tokenMintA"], symbol=raw["tokenA"]["symbol"] or "")
     token_b = TokenSide(mint=raw["tokenMintB"], symbol=raw["tokenB"]["symbol"] or "")
 
-    price_a_in_b = float(raw["price"])
+    # `price` itself wasn't actually observed null in the pools that
+    # triggered the ~1566/cycle `float() argument ... NoneType` WARNs
+    # (see tvl_usd below for the field that was) -- but coerced
+    # defensively anyway, same reasoning and same `or 0.0` pattern as
+    # tvl_usd/volume_24h_usd: nothing meaningful to default a null
+    # price to, so 0.0 deliberately routes it into the very next check
+    # below, the same non-positive-price ghost-pool skip Orca's (rare)
+    # genuine zero-price pools and Meteora's much more common ones
+    # already go through, rather than inventing a second skip path for
+    # what's really the same "no usable price" outcome.
+    price_a_in_b = float(raw["price"] or 0.0)
     if price_a_in_b <= 0:
         raise ValueError(f"non-positive price: {price_a_in_b}")
 
     base, quote, price_native = canonicalize(token_a, token_b, price_a_in_b)
 
     fee_bps = round(raw["feeRate"] / FEE_RATE_TO_BPS_DIVISOR)
-    tvl_usd = float(raw["tvlUsdc"])
+    # `tvlUsdc` is null (not just absent) for some pools -- confirmed
+    # live as the actual field behind the ~1566/cycle
+    # `float() argument ... NoneType` WARNs (every sampled failing raw
+    # record had a real, non-null `price` and a null `tvlUsdc` --
+    # traced by capturing the raw dict at the point of failure, not
+    # assumed from the field name alone). Same `or 0.0` coercion as
+    # volume_24h_usd right below: a pool with no reported TVL isn't
+    # meaningfully different from one reporting exactly $0, and 0.0
+    # here doesn't trigger any further skip logic the way a coerced
+    # price does -- it's a real, if unremarkable, tvl_usd value some
+    # rows will legitimately carry.
+    tvl_usd = float(raw["tvlUsdc"] or 0.0)
     volume_24h_usd = float((raw.get("stats", {}).get("24h", {}) or {}).get("volume") or 0.0)
 
     # price_usd is only populated when it's cheap/honest to do so: if
