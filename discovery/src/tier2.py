@@ -43,7 +43,7 @@ import datetime
 from dataclasses import dataclass, field
 from typing import Optional
 
-from discovery.src.detection import ENTITY_TYPE_DEX_POOL
+from discovery.src.detection import ENTITY_TYPE_DEX_POOL, EXISTENCE_CHECK_CHUNK_SIZE
 from discovery.src.logger import Level, log
 
 TIER2_SRC = "T2M"  # Tier 2 management: promotion/demotion decisions, distinct from T2P's poll-execution lines (tier2_poller.py)
@@ -233,6 +233,11 @@ class GrowthBasedRegistry:
         pulls scan), so this is a cheap local ClickHouse scan, not
         remotely comparable in cost to the external REST calls that
         produced `snapshot_ts`'s own rows.
+
+        Correct ONLY for a venue whose every Tier 1 cycle covers its
+        full universe -- see fetch_prior_snapshot_per_pool() below for
+        the venues in scheduler.py's PARTIAL_COVERAGE_VENUES, where
+        this single-shared-snapshot_ts assumption breaks.
         """
         result = client.query(
             "SELECT pool_address, volume_24h_usd, tvl_usd FROM dex_pool_snapshots "
@@ -244,7 +249,68 @@ class GrowthBasedRegistry:
         )
         return {row[0]: (row[1], row[2]) for row in result.result_rows}
 
-    def evaluate(self, client, venue: str, current_rows: list[dict], snapshot_ts: datetime.datetime) -> dict[str, list]:
+    def fetch_prior_snapshot_per_pool(
+        self, client, venue: str, pool_addresses: list[str], snapshot_ts: datetime.datetime
+    ) -> dict[str, tuple[float, float]]:
+        """Same return shape as fetch_prior_snapshot() (pool_address ->
+        (volume_24h_usd, tvl_usd)), but looks up each of
+        `pool_addresses`' own individually most recent row strictly
+        before `snapshot_ts`, rather than assuming every pool in
+        `current_rows` shares one "venue's last snapshot_ts". Needed
+        for a venue in PARTIAL_COVERAGE_VENUES (currently just
+        meteora_dlmm -- see CLAUDE.md's "Meteora sub-cycle pagination"
+        section): once a venue's cycles no longer each cover the full
+        universe, the pools swept THIS cycle are, by construction,
+        disjoint from the pools swept in the immediately-preceding
+        cycle (a different 1/3 page slice) -- so fetch_prior_snapshot()'s
+        single shared snapshot_ts would silently find zero prior rows
+        for almost every pool, and growth-based promotion/demotion
+        would stop working for the whole venue without ever raising an
+        error. This is the fix: each pool's prior is wherever its own
+        last sweep actually wrote a row, whether that was 1, 2, or 3
+        cycles ago.
+
+        For a venue that DOES still cover its full universe every
+        cycle, this is exactly equivalent to fetch_prior_snapshot()
+        (every pool's own latest prior row IS the venue's one shared
+        prior snapshot_ts in that case) -- not used there anyway,
+        since fetch_prior_snapshot() is cheaper (one query, no
+        pool_address IN-list) and every DEX venue's kept-row count
+        except Meteora's own slice can run into the tens of thousands,
+        well past EXISTENCE_CHECK_CHUNK_SIZE (see detection.py's
+        module comment for the ClickHouse HTTP field-size cap this
+        guards against) -- chunking below is what keeps this safe for
+        Meteora's own slice size too, even though it's typically well
+        under that threshold.
+        """
+        prior: dict[str, tuple[float, float]] = {}
+        for start in range(0, len(pool_addresses), EXISTENCE_CHECK_CHUNK_SIZE):
+            chunk = pool_addresses[start : start + EXISTENCE_CHECK_CHUNK_SIZE]
+            result = client.query(
+                """
+                SELECT pool_address, volume_24h_usd, tvl_usd FROM dex_pool_snapshots
+                WHERE venue = {venue:String} AND pool_address IN {addrs:Array(String)}
+                  AND snapshot_ts < {snapshot_ts:DateTime64(3)}
+                  AND (pool_address, snapshot_ts) IN (
+                      SELECT pool_address, max(snapshot_ts) FROM dex_pool_snapshots
+                      WHERE venue = {venue:String} AND pool_address IN {addrs:Array(String)}
+                        AND snapshot_ts < {snapshot_ts:DateTime64(3)}
+                      GROUP BY pool_address
+                  )
+                """,
+                parameters={"venue": venue, "addrs": chunk, "snapshot_ts": snapshot_ts},
+            )
+            prior.update({row[0]: (row[1], row[2]) for row in result.result_rows})
+        return prior
+
+    def evaluate(
+        self,
+        client,
+        venue: str,
+        current_rows: list[dict],
+        snapshot_ts: datetime.datetime,
+        partial_coverage: bool = False,
+    ) -> dict[str, list]:
         """Re-scores every currently-kept pool in `current_rows`
         against its prior Tier 1 cycle (section 3.2: "re-evaluira se
         na svaki Tier 1 ciklus"), using the simple OR rule (section
@@ -259,12 +325,28 @@ class GrowthBasedRegistry:
         against and genuinely has nothing to say about a pool that
         didn't exist in the prior snapshot.
 
+        `partial_coverage=True` (only ever passed for venues in
+        scheduler.py's PARTIAL_COVERAGE_VENUES) switches the prior-row
+        lookup to fetch_prior_snapshot_per_pool() instead of
+        fetch_prior_snapshot() -- see that method's docstring for why
+        the difference matters. A pool this venue didn't sweep this
+        cycle simply isn't in `current_rows` at all, so this loop
+        never touches it either way -- its growth_based membership
+        (hot or not) stays exactly as the last cycle that actually
+        swept it left it, never demoted or reset just because this
+        cycle's slice didn't reach it.
+
         Returns {"promoted": [...], "demoted": [...], "still_hot": [...]}
         as (venue, pool_address, hot_reason) / (venue, pool_address)
         tuples, for logging and reporting -- callers that don't need
         the detail can just inspect the lengths.
         """
-        prior = self.fetch_prior_snapshot(client, venue, snapshot_ts)
+        if partial_coverage:
+            prior = self.fetch_prior_snapshot_per_pool(
+                client, venue, [row["pool_address"] for row in current_rows], snapshot_ts
+            )
+        else:
+            prior = self.fetch_prior_snapshot(client, venue, snapshot_ts)
         promoted: list[tuple[str, str, str]] = []
         demoted: list[tuple[str, str]] = []
         still_hot: list[tuple[str, str]] = []

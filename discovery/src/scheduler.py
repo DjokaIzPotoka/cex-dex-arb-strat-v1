@@ -108,6 +108,7 @@ import signal
 import sys
 import time
 import traceback
+from typing import Optional
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
@@ -124,7 +125,7 @@ from discovery.src.providers.binance_symbols import BinanceSymbolProvider  # noq
 from discovery.src.providers.bitget_symbols import BitgetSymbolProvider  # noqa: E402
 from discovery.src.providers.bybit_symbols import BybitSymbolProvider  # noqa: E402
 from discovery.src.providers.gateio_symbols import GateioSymbolProvider  # noqa: E402
-from discovery.src.providers.meteora_dlmm import MeteoraDlmmRestProvider  # noqa: E402
+from discovery.src.providers.meteora_dlmm import MeteoraCursor, MeteoraDlmmRestProvider  # noqa: E402
 from discovery.src.providers.okx_symbols import OkxSymbolProvider  # noqa: E402
 from discovery.src.providers.orca_rest import OrcaRestProvider  # noqa: E402
 from discovery.src.providers.raydium_amm_v4 import RaydiumAmmV4RestProvider  # noqa: E402
@@ -160,6 +161,19 @@ DEX_SRC = {
     "raydium_clmm": "RCL",
     "meteora_dlmm": "MET",
 }
+
+# Venues whose Tier 1 fetch covers only part of the venue's universe
+# in a given cycle, per CLAUDE.md's "Meteora sub-cycle pagination"
+# section -- currently just meteora_dlmm (see MeteoraCursor in
+# meteora_dlmm.py). Used in two places below: _run_dex_source() passes
+# the persistent cursor only for venues in this set, and
+# GrowthBasedRegistry.evaluate() is told to compare each pool against
+# its own individually-most-recent prior row (not "the venue's single
+# last snapshot_ts", which is wrong once a venue's cycles no longer
+# each cover the full universe -- see tier2.py's evaluate() docstring)
+# only for venues in this set; the other 8 sources keep the cheaper,
+# equally-correct single-snapshot_ts comparison.
+PARTIAL_COVERAGE_VENUES = {"meteora_dlmm"}
 CEX_SRC = {
     "binance": "BNC",
     "bybit": "BYB",
@@ -211,14 +225,29 @@ def _build_cex_providers() -> dict[str, object]:
     }
 
 
-def _run_dex_source(venue: str, provider, snapshot_ts: datetime.datetime, tier2_state: Tier2State) -> list[dict]:
-    """Full unbounded broad pull for one DEX venue (Tier 1 -- "ceo DEX
-    univerzum, bez izuzetka", section 3.2), dropping zero-24h-volume
-    ghosts per section 3.7, same filter every run_*_snapshot.py script
-    already applies. Never raises: any exception from the provider
-    (network, parse, API error) is caught, logged, and turned into an
-    empty result for this cycle -- see this module's docstring on
-    per-source failure isolation.
+def _run_dex_source(
+    venue: str,
+    provider,
+    snapshot_ts: datetime.datetime,
+    tier2_state: Tier2State,
+    meteora_cursor: Optional[MeteoraCursor] = None,
+) -> list[dict]:
+    """Full broad pull for one DEX venue (Tier 1 -- "ceo DEX univerzum,
+    bez izuzetka", section 3.2), dropping zero-24h-volume ghosts per
+    section 3.7, same filter every run_*_snapshot.py script already
+    applies. Never raises: any exception from the provider (network,
+    parse, API error) is caught, logged, and turned into an empty
+    result for this cycle -- see this module's docstring on per-source
+    failure isolation.
+
+    `meteora_cursor`, when `venue in PARTIAL_COVERAGE_VENUES` (today,
+    only "meteora_dlmm"), bounds this pull to roughly 1/3 of that
+    venue's universe -- see MeteoraCursor's own docstring in
+    meteora_dlmm.py and CLAUDE.md's "Meteora sub-cycle pagination"
+    section for the full design. "Full unbounded" in the sense of the
+    old docstring wording above no longer holds for that one venue's
+    per-cycle pull specifically; it still holds for the other 3 DEX
+    venues.
 
     tier/hot_reason are looked up per pool from `tier2_state` (already
     pruned/settled from the *previous* cycle's decisions -- this
@@ -239,7 +268,10 @@ def _run_dex_source(venue: str, provider, snapshot_ts: datetime.datetime, tier2_
     try:
         rows: list[dict] = []
         kept, dropped_ghost = 0, 0
-        for pool_row in provider.list_pools():
+        pool_iter = (
+            provider.list_pools(cursor=meteora_cursor) if venue in PARTIAL_COVERAGE_VENUES else provider.list_pools()
+        )
+        for pool_row in pool_iter:
             if pool_row.volume_24h_usd <= 0:
                 dropped_ghost += 1
                 continue
@@ -323,7 +355,7 @@ def _write_rows(client, table: str, rows: list[dict], src: str) -> None:
     log(Level.INFO, [("event", "clickhouse_insert"), ("table", table), ("rows", str(len(rows)))], src=src)
 
 
-def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller) -> float:
+def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteora_cursor: MeteoraCursor) -> float:
     """Runs one full Tier 1 cycle: all 4 DEX venues, then all 5 CEX
     exchanges (sequential -- see module docstring), writing each
     source's rows to ClickHouse immediately, then one detect_new_entities
@@ -334,6 +366,12 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller) -> flo
     (a no-op unless ~60s have elapsed -- see tier2_poller.py's
     docstring for why this is checked here instead of on its own
     thread). Returns the cycle's wall-clock duration in seconds.
+
+    `meteora_cursor` is threaded through to _run_dex_source() for
+    meteora_dlmm specifically (see PARTIAL_COVERAGE_VENUES and
+    MeteoraCursor's own docstring) -- constructed once in main(), not
+    here, since it must survive across cycles the way tier2_state does
+    (this function's own local variables don't).
     """
     cycle_start = time.monotonic()
     snapshot_ts = datetime.datetime.now(datetime.timezone.utc)
@@ -347,7 +385,7 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller) -> flo
 
     dex_rows_by_venue: dict[str, list[dict]] = {}
     for venue, provider in _build_dex_providers().items():
-        rows = _run_dex_source(venue, provider, snapshot_ts, tier2_state)
+        rows = _run_dex_source(venue, provider, snapshot_ts, tier2_state, meteora_cursor=meteora_cursor)
         dex_rows_by_venue[venue] = rows
         _write_rows(client, "dex_pool_snapshots", rows, DEX_SRC[venue])
         if rows:
@@ -358,7 +396,17 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller) -> flo
             # next Tier 2 poll or Tier 1 cycle), same reasoning as
             # _run_dex_source's docstring on why the row just written
             # can't reflect a decision made from its own data.
-            tier2_state.growth_based.evaluate(client, venue, rows, snapshot_ts)
+            #
+            # partial_coverage=True for venues in PARTIAL_COVERAGE_VENUES
+            # (meteora_dlmm): compares each pool against its own most
+            # recent prior row individually, not "the venue's single
+            # last snapshot_ts" -- see GrowthBasedRegistry.evaluate()'s
+            # docstring for why the latter silently stops finding any
+            # prior row at all once a venue's cycles no longer each
+            # cover the full universe.
+            tier2_state.growth_based.evaluate(
+                client, venue, rows, snapshot_ts, partial_coverage=venue in PARTIAL_COVERAGE_VENUES
+            )
         tier2_poller.maybe_poll()
 
     cex_rows_by_exchange: dict[str, list[dict]] = {}
@@ -458,10 +506,17 @@ def main() -> None:
     now = datetime.datetime.now(datetime.timezone.utc)
     tier2_state.age_based.seed_from_history(client, now)
     tier2_poller = Tier2Poller(client, tier2_state)
+    # Constructed once here, same lifetime/rationale as tier2_state --
+    # see MeteoraCursor's own docstring (meteora_dlmm.py) and
+    # CLAUDE.md's "Meteora sub-cycle pagination" section. A restart
+    # always starts a fresh MeteoraCursor() (next_page=1), i.e. a
+    # fresh sweep from page 1 -- accepted, documented behavior, not a
+    # gap to fix (a full sweep is only ~3 cycles / ~15 min).
+    meteora_cursor = MeteoraCursor()
 
     while not _shutdown_requested:
         try:
-            elapsed = run_cycle(client, tier2_state, tier2_poller)
+            elapsed = run_cycle(client, tier2_state, tier2_poller, meteora_cursor)
         except Exception:  # noqa: BLE001 -- last-resort guard, see comment below
             # Should be unreachable: every source and the detection
             # call already catch their own exceptions. But a scheduler-

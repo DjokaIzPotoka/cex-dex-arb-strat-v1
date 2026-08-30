@@ -76,6 +76,7 @@ base_fee_pct.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Iterator, Optional, Sequence
 
@@ -92,6 +93,25 @@ DEFAULT_PAGE_SIZE = 1000
 REQUEST_TIMEOUT_S = DEFAULT_TIMEOUT_S
 
 VENUE = "meteora_dlmm"
+
+# Explicit src tag for this provider's own internal log calls
+# (parse_skip, meteora_cursor_slice below), matching scheduler.py's
+# DEX_SRC["meteora_dlmm"]="MET" tag used on that module's own
+# start/done/failed wrapper lines around this provider. A deliberate,
+# narrow deviation from logger.py's documented convention that
+# provider-internal calls stay at the default "DSC" tag (see that
+# module's docstring: "rewriting those call sites across 9 provider
+# files for this alone wasn't worth the churn") -- the other 8
+# providers' internal log calls are intentionally left at DSC, not
+# changed here. This one site was singled out because its WARN volume
+# (up to ~97k/cycle, the documented Phase 1b ghost-pool population --
+# see this module's docstring) was, before this change, indistinguishable
+# at a glance from the much smaller, unrelated parse_skip population
+# orca_rest.py emits at the same default DSC tag (a `float() argument
+# ... NoneType` TypeError from a null `price` field -- a separate,
+# genuine parse edge case, not ghost-pool filtering, that this change
+# does not touch or explain away).
+SRC = "MET"
 
 # Section 5.1's published 30 req/s, margined to 90% per section 5.4
 # point 1 -- see module docstring's "Rate limiting" paragraph.
@@ -252,6 +272,67 @@ def _parse_raw_pool(raw: dict) -> MeteoraPoolRow:
     )
 
 
+@dataclass
+class MeteoraCursor:
+    """Persistent, in-process page-range cursor letting Tier 1 spread
+    Meteora's full ~126k-pool paginated walk across multiple 5-minute
+    cycles instead of pulling the whole universe every single cycle
+    (~289s, ~46% of every cycle's budget -- see CLAUDE.md's "Meteora
+    sub-cycle pagination" section for the full design and why this was
+    needed). Roughly 1/3 of the universe's pages is covered per Tier 1
+    cycle, targeting full-universe coverage every ~3 cycles (~15 min)
+    instead of every cycle (~5 min) -- a deliberate, documented
+    deviation from design doc section 3.2's "every Tier 1 cycle covers
+    the full universe" for this one venue only; the other 8 sources are
+    unaffected.
+
+    Constructed once at scheduler startup (scheduler.py's main(), same
+    lifetime as Tier2State) and passed into list_pools() by the caller
+    each cycle -- deliberately NOT stored as state on
+    MeteoraDlmmRestProvider itself, since that's rebuilt fresh every
+    cycle (see scheduler.py's _build_dex_providers() docstring) while
+    this cursor must survive across cycles to mean anything. A fresh
+    MeteoraCursor() (next_page=1) simply starts a fresh sweep from page
+    1 -- the correct, accepted behavior on a scheduler restart (a full
+    sweep is only ~3 cycles / ~15 minutes, cheap to just redo, so this
+    state is not persisted anywhere outside the process, same tradeoff
+    Tier2State's growth-based registry already makes -- see tier2.py's
+    module docstring).
+    """
+
+    next_page: int = 1
+
+    def take_slice(self, total_pages: int, fraction: float = 1.0 / 3.0) -> tuple[int, int]:
+        """Returns (start_page, end_page_inclusive) for this cycle's
+        slice: `fraction` of total_pages (rounded up, at least 1),
+        starting wherever the last cycle's slice left off, wrapping
+        back to page 1 once the cursor runs past total_pages (either
+        by reaching the end, or because the universe shrank since the
+        cursor's position was last saved -- `% total_pages` handles
+        both cases the same way, without a special case).
+
+        `total_pages` is passed in fresh each call (re-read from the
+        API's own response, not cached on this cursor) since the
+        universe grows over time -- see list_pools() for where it's
+        read. Note this means page *boundaries* can drift between the
+        cycles that make up one full sweep if the universe's size (or
+        the API's own ordering) changes mid-sweep: a pool could in
+        principle land in a page range twice, or in neither, across
+        one ~15-minute sweep. Accepted as a best-effort coverage
+        guarantee, not an exhaustive one -- the same class of tradeoff
+        tier2_poller.py's own poll cadence already documents ("best-
+        effort, not a hard real-time guarantee"), and correcting it
+        would need a stable sort key or cursor token the API doesn't
+        expose (only page/page_size -- see this module's docstring).
+        """
+        total_pages = max(1, total_pages)
+        slice_size = max(1, math.ceil(total_pages * fraction))
+        start = ((self.next_page - 1) % total_pages) + 1
+        end = min(start + slice_size - 1, total_pages)
+        self.next_page = end + 1 if end < total_pages else 1
+        return start, end
+
+
 class MeteoraDlmmRestProvider:
     """Implements PoolMetadataProvider, PoolStateProvider, and
     PoolVolumeProvider against Meteora's DLMM REST API.
@@ -283,6 +364,7 @@ class MeteoraDlmmRestProvider:
                 log(
                     Level.WARN,
                     [("event", "parse_skip"), ("pool", addr), ("err", str(exc))],
+                    src=SRC,
                 )
         return rows
 
@@ -291,17 +373,69 @@ class MeteoraDlmmRestProvider:
         page_size: int = DEFAULT_PAGE_SIZE,
         max_pages: Optional[int] = None,
         query: Optional[str] = None,
+        cursor: Optional[MeteoraCursor] = None,
     ) -> Iterator[MeteoraPoolRow]:
-        """Walks the full paginated pool list, terminated by
+        """Walks the paginated pool list, terminated by
         `current_page >= pages` (this API doesn't expose a
         `hasNextPage`-style boolean). `query` substring-filters by
         pool name server-side (see module docstring) -- useful for
         finding a specific pair cheaply instead of walking the full
-        ~122k-pool universe.
+        ~126k-pool universe.
+
+        `cursor`, when given (only scheduler.py's Tier 1 path does
+        this -- see MeteoraCursor's docstring), bounds this call to
+        roughly 1/3 of the universe's pages instead of walking all of
+        them, picking up where the previous call left off. Finding
+        that slice needs `total_pages`, which is only known from an
+        API response, not knowable up front -- so the first page
+        fetched is always page 1 (needed to read `pages` off its
+        body), and its rows are yielded normally only if the cursor's
+        slice happens to start there too; otherwise that page's data
+        is used solely to learn `total_pages` and then discarded, and
+        the walk jumps straight to the slice's actual start page. This
+        costs one extra ~2.8s request on the ~2 of every 3 cycles
+        where the slice doesn't start at page 1 -- a small, accepted
+        cost of not needing to cache total_pages (which could drift
+        stale as the universe grows) across calls.
         """
-        page = 1
+        end_page: Optional[int] = None
+        if cursor is None:
+            page = 1
+        else:
+            self._bucket.consume()
+            peek_resp = self._session.get(
+                f"{API_BASE}/pools", params={"page_size": page_size, "page": 1}, timeout=REQUEST_TIMEOUT_S
+            )
+            peek_resp.raise_for_status()
+            peek_body = peek_resp.json()
+            total_pages = peek_body.get("pages") or 1
+            start_page, end_page = cursor.take_slice(total_pages)
+            log(
+                Level.INFO,
+                [
+                    ("event", "meteora_cursor_slice"),
+                    ("start_page", str(start_page)),
+                    ("end_page", str(end_page)),
+                    ("total_pages", str(total_pages)),
+                ],
+                src=SRC,
+            )
+            if start_page == 1:
+                for raw in peek_body.get("data", []):
+                    try:
+                        yield _parse_raw_pool(raw)
+                    except (KeyError, TypeError, ValueError, ZeroDivisionError) as exc:
+                        log(
+                            Level.WARN,
+                            [("event", "parse_skip"), ("pool", str(raw.get("address", "?"))), ("err", str(exc))],
+                            src=SRC,
+                        )
+                page = 2
+            else:
+                page = start_page
+
         pages_fetched = 0
-        while True:
+        while end_page is None or page <= end_page:
             params: dict = {"page_size": page_size, "page": page}
             if query:
                 params["query"] = query
@@ -322,11 +456,12 @@ class MeteoraDlmmRestProvider:
                             ("pool", str(raw.get("address", "?"))),
                             ("err", str(exc)),
                         ],
+                        src=SRC,
                     )
             pages_fetched += 1
             total_pages = body.get("pages", page)
             page += 1
-            if page > total_pages or (max_pages is not None and pages_fetched >= max_pages):
+            if end_page is None and (page > total_pages or (max_pages is not None and pages_fetched >= max_pages)):
                 break
 
     # --- Protocol-conforming views -----------------------------------

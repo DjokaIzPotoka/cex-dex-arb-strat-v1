@@ -101,9 +101,13 @@ TIER2_POLL_INTERVAL_S = 60.0
 # pool -- see module docstring) finishes one poll pass comfortably
 # under TIER2_POLL_INTERVAL_S, instead of the ~18.5 minutes an
 # uncapped pass against a large real hot set took live (see module
-# docstring for the incident this constant exists because of). Also
-# doubles as the RPC path's per-call getMultipleAccounts batch size
-# (that method's own hard cap -- see solana_rpc_state.py).
+# docstring for the incident this constant exists because of). For
+# the RPC venues (Orca/Raydium CLMM), this is the per-*poll* address
+# budget, not the per-*call* batch size -- solana_rpc_state.py's
+# QUICKNODE_BATCH_LIMIT (4, well under this) further chunks it into
+# several getMultipleAccounts calls internally, since the configured
+# RPC host enforces a tighter limit than this constant or the
+# protocol's own 100-account cap.
 MAX_POOLS_PER_VENUE_PER_POLL = 100
 
 # Venues whose Tier 2 state polling goes through solana_rpc_state.py's
