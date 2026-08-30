@@ -48,7 +48,40 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from discovery.src.db import get_client  # noqa: E402
 
 REFRESH_INTERVAL_MS = 30_000
-STALENESS_THRESHOLD_MIN = 10
+
+# Replaces the old STALENESS_THRESHOLD_MIN (now-vs-snapshot_ts per
+# source). That metric was retired, not just renamed: scheduler.py
+# stamps every row in a Tier 1 cycle -- all 4 DEX venues and all 5 CEX
+# exchanges alike -- with one shared snapshot_ts computed once at
+# cycle start (see run_cycle()'s own docstring; this is correct and
+# load-bearing for detection.py/tier2.py's "prior cycle" comparisons,
+# not something to change). A per-source "now - snapshot_ts" therefore
+# doesn't measure that source's own data freshness at all -- it mostly
+# measures how late in the fixed DEX-then-CEX execution order that
+# source happens to run: confirmed live, CEX sources (run last, after
+# ~460-500s of DEX work) showed "~8-9min stale" on a row that had in
+# fact just been written seconds earlier, while orca_whirlpool (run
+# first) showed near-zero -- a pure sequencing artifact with nothing
+# to do with any source's real health. See CLAUDE.md's "ops_dashboard
+# staleness" section for the full live trace that pinned this down.
+#
+# Two separate, honest metrics replace it:
+# - "Cycle age" (now - the current cycle's shared snapshot_ts): shown
+#   ONCE, globally, not per source -- it's a property of the cycle,
+#   not of any individual source, so 9 near-identical numbers differing
+#   only by sequencing noise would just restate the same bias 9 times.
+# - Per-source health, from ROW COUNT PRESENCE at the two most recent
+#   distinct snapshot_ts values (see fetch_last_two_snapshot_ts /
+#   fetch_source_row_counts_for_ts below) -- did this source write any
+#   rows in the current cycle, not how long ago it did. This is exactly
+#   what scheduler.py's own failure-isolation already guarantees is
+#   meaningful: a source whose fetch raised is caught, logged, and
+#   returns `[]` (see _run_dex_source/_run_cex_source's docstrings),
+#   and _write_rows is a no-op for an empty list -- so a failed
+#   source's row count at the current snapshot_ts is exactly 0, not
+#   partial or delayed, regardless of where in the execution order it
+#   sits. No new instrumentation needed: this reads the same two
+#   tables every other query on this page already reads.
 
 # Matches scheduler.py's DEX_SRC/CEX_SRC venue/exchange keys exactly --
 # duplicated here rather than imported, deliberately: importing from
@@ -111,8 +144,12 @@ def _client():
 
 def fetch_last_snapshot_ts(client) -> dict[str, Optional[datetime.datetime]]:
     """venue/exchange -> its most recent snapshot_ts, or None if that
-    source has never written a row at all (distinct from "stale" --
-    surfaced separately in the health badge).
+    source has never written a row at all. Purely informational now
+    ("when did this source last write anything, ever") -- NOT used for
+    any fresh/stale judgment (see the module-level comment above
+    REFRESH_INTERVAL_MS for why a per-source now-vs-snapshot_ts
+    comparison is structurally misleading here). That judgment is
+    fetch_source_row_counts_for_ts's job below.
     """
     result: dict[str, Optional[datetime.datetime]] = {src: None for src in ALL_SOURCES}
     dex = client.query("SELECT venue, max(snapshot_ts) FROM dex_pool_snapshots GROUP BY venue")
@@ -121,6 +158,87 @@ def fetch_last_snapshot_ts(client) -> dict[str, Optional[datetime.datetime]]:
     cex = client.query("SELECT exchange, max(snapshot_ts) FROM cex_symbol_snapshots GROUP BY exchange")
     for exchange, ts in cex.result_rows:
         result[exchange] = _as_utc(ts)
+    return result
+
+
+def fetch_last_two_snapshot_ts(client) -> tuple[Optional[datetime.datetime], Optional[datetime.datetime]]:
+    """Returns (previous_cycle_ts, current_cycle_ts) -- the two most
+    recent DISTINCT snapshot_ts values from `cex_symbol_snapshots`
+    specifically, NOT a union across both tables (found live, while
+    validating this dashboard change, before it ever shipped: a UNION
+    over dex_pool_snapshots too pulls in tier2_poller.py's OWN,
+    separate `snapshot_ts = datetime.datetime.now(...)` stamped fresh
+    on every ~60-90s Tier 2 poll -- a different, much more frequent
+    timestamp than Tier 1's once-per-cycle one, and one CEX rows never
+    share since Tier 2 only ever re-polls DEX hot pools, never CEX.
+    Unioning both tables meant "current_ts" was usually a Tier 2 poll
+    moment, not a Tier 1 cycle boundary -- which made every CEX source
+    look permanently "STOPPED" (0 rows at a timestamp CEX never writes
+    to by construction), reintroducing a structural bias against CEX
+    from a different angle than the one this change exists to fix.
+
+    `cex_symbol_snapshots` has no such pollution -- every row in it
+    comes from exactly one place, scheduler.py's Tier 1 loop, so its
+    own distinct snapshot_ts values ARE exactly the Tier 1 cycle
+    boundaries, one per completed cycle. Since every source (DEX and
+    CEX alike) shares one snapshot_ts per Tier 1 cycle (see the
+    module-level comment above REFRESH_INTERVAL_MS), those same two
+    values are valid reference points for checking DEX venues' row
+    counts too (fetch_source_row_counts_for_ts) -- any DEX rows from
+    an intervening Tier 2 poll simply won't match either exact value
+    and are correctly excluded.
+
+    A useful side effect: because CEX is always the last group fetched
+    each cycle (see scheduler.py's DEX-then-CEX order), a snapshot_ts
+    only ever appears in `cex_symbol_snapshots` once that whole cycle
+    has actually finished -- so `current_ts` here is always a
+    genuinely completed cycle, never one still in progress. `Either or
+    both can be None early in a fresh run (right after a TRUNCATE,
+    before even one cycle has reached its CEX phase, or after exactly
+    one).
+    """
+    result = client.query("SELECT DISTINCT snapshot_ts FROM cex_symbol_snapshots ORDER BY snapshot_ts DESC LIMIT 2")
+    ts_list = [_as_utc(row[0]) for row in result.result_rows]
+    current_ts = ts_list[0] if len(ts_list) >= 1 else None
+    previous_ts = ts_list[1] if len(ts_list) >= 2 else None
+    return previous_ts, current_ts
+
+
+def fetch_source_row_counts_for_ts(
+    client, ts_values: list[datetime.datetime]
+) -> dict[str, dict[datetime.datetime, int]]:
+    """source -> {snapshot_ts: row_count}, for each of `ts_values`
+    (only ever called with the last-two-cycles pair from
+    fetch_last_two_snapshot_ts). A source/timestamp combination with
+    no matching rows is simply absent from its inner dict -- callers
+    treat that as count 0, not queried separately, since ClickHouse
+    GROUP BY only returns combinations that actually exist.
+
+    This is the real "is source X still working" signal (per this
+    session's explicit scope: reuse existing data, no new
+    instrumentation, no log parsing): scheduler.py's per-source
+    failure isolation (_run_dex_source/_run_cex_source) means an
+    exception during a source's fetch is caught and turned into `[]`,
+    and _write_rows() is a no-op for an empty list -- so a source that
+    failed THIS cycle has exactly 0 rows at the current cycle's
+    snapshot_ts, full stop, regardless of how many rows it wrote in
+    every prior cycle or where in the execution order it sits.
+    """
+    if not ts_values:
+        return {src: {} for src in ALL_SOURCES}
+    result: dict[str, dict[datetime.datetime, int]] = {src: {} for src in ALL_SOURCES}
+    dex = client.query(
+        "SELECT venue, snapshot_ts, count() FROM dex_pool_snapshots WHERE snapshot_ts IN {ts:Array(DateTime64(3))} GROUP BY venue, snapshot_ts",
+        parameters={"ts": ts_values},
+    )
+    for venue, ts, count in dex.result_rows:
+        result.setdefault(venue, {})[_as_utc(ts)] = count
+    cex = client.query(
+        "SELECT exchange, snapshot_ts, count() FROM cex_symbol_snapshots WHERE snapshot_ts IN {ts:Array(DateTime64(3))} GROUP BY exchange, snapshot_ts",
+        parameters={"ts": ts_values},
+    )
+    for exchange, ts, count in cex.result_rows:
+        result.setdefault(exchange, {})[_as_utc(ts)] = count
     return result
 
 
@@ -207,30 +325,74 @@ def fetch_recent_new_entities(client, limit: int = 10) -> list[tuple]:
     return r.result_rows
 
 
-def compute_health(
-    freshness: dict[str, Optional[datetime.datetime]], now: datetime.datetime
-) -> tuple[str, str]:
-    """Returns (level, reason) where level is 'green'/'yellow'/'red'.
-    green: all 9 sources fresh. red: zero sources fresh (or nothing has
-    ever been written). yellow: everything in between -- partial
-    degradation, named explicitly in the reason string rather than
-    just "some sources stale".
+def source_status(
+    row_counts: dict[str, dict[datetime.datetime, int]],
+    src: str,
+    previous_ts: Optional[datetime.datetime],
+    current_ts: Optional[datetime.datetime],
+) -> str:
+    """One of "ok" / "pending" / "STOPPED" for one source.
+
+    `current_ts` (from fetch_last_two_snapshot_ts) is always a
+    genuinely COMPLETED Tier 1 cycle, never one still in progress --
+    it's anchored on cex_symbol_snapshots, which only ever gets a
+    snapshot_ts once that cycle has already reached its last
+    (CEX) phase (see that function's docstring for why, and for the
+    Tier 2 poll-timestamp pollution bug this sidesteps). So a source
+    with 0 rows at `current_ts` isn't "hasn't had its turn yet this
+    round" the way the old now-vs-snapshot_ts metric could be misread
+    -- that cycle is over, and this source produced nothing in it.
+
+    Still deliberately a 3-state, not 2-state, check, though: a single
+    completed cycle with 0 rows could be a one-off transient blip
+    (a timeout, a momentary API hiccup) rather than the source being
+    actually broken -- scheduler.py's own per-source failure isolation
+    treats exactly this as expected/recoverable, not an emergency (see
+    _run_dex_source/_run_cex_source's docstrings). "pending" names
+    that "failed once, watching" state explicitly rather than either
+    false-alarming on a single blip or silently calling it "ok".
+
+    Only 0 rows at BOTH `current_ts` and `previous_ts` -- two
+    consecutive COMPLETED cycles, not two dashboard refreshes -- counts
+    as "STOPPED": a real, confirmed problem (bad URL, API change, auth
+    failure), not noise.
     """
-    problems = []
-    for src in ALL_SOURCES:
-        ts = freshness.get(src)
-        if ts is None:
-            problems.append(f"{src}: no data")
-        else:
-            age_min = (now - ts).total_seconds() / 60
-            if age_min > STALENESS_THRESHOLD_MIN:
-                problems.append(f"{src}: {age_min:.1f}m stale")
+    current_count = row_counts.get(src, {}).get(current_ts, 0) if current_ts else 0
+    if current_count > 0:
+        return "ok"
+    if previous_ts is None:
+        # Only one cycle has ever completed (or none) -- can't yet
+        # tell "one-off blip" apart from "broken" for this source,
+        # so don't claim either.
+        return "pending"
+    previous_count = row_counts.get(src, {}).get(previous_ts, 0)
+    return "STOPPED" if previous_count == 0 else "pending"
+
+
+def compute_health_from_row_counts(
+    row_counts: dict[str, dict[datetime.datetime, int]],
+    previous_ts: Optional[datetime.datetime],
+    current_ts: Optional[datetime.datetime],
+) -> tuple[str, str, dict[str, str]]:
+    """Returns (level, reason, status_by_source) where level is
+    'green'/'yellow'/'red' and status_by_source[src] is
+    source_status()'s per-source verdict. green: no source is
+    STOPPED (a source still "pending" -- simply hasn't had its turn
+    in an in-progress cycle yet -- is not a problem, see
+    source_status()'s docstring). red: current_ts is None (no cycle
+    has ever written anything) or every source is STOPPED. yellow:
+    some but not all sources STOPPED.
+    """
     total = len(ALL_SOURCES)
-    if not problems:
-        return "green", f"all {total}/{total} sources have a row within the last {STALENESS_THRESHOLD_MIN} minutes"
-    if len(problems) == total:
-        return "red", "no source has fresh data -- " + "; ".join(problems)
-    return "yellow", f"{len(problems)}/{total} sources stale or missing -- " + "; ".join(problems)
+    if current_ts is None:
+        return "red", "no Tier 1 cycle has written any data yet", {src: "pending" for src in ALL_SOURCES}
+    status_by_source = {src: source_status(row_counts, src, previous_ts, current_ts) for src in ALL_SOURCES}
+    stopped = [src for src, status in status_by_source.items() if status == "STOPPED"]
+    if not stopped:
+        return "green", f"no source has gone 2 consecutive cycles without writing (out of {total} sources)", status_by_source
+    if len(stopped) == total:
+        return "red", "every source has gone 2 consecutive cycles without writing -- " + ", ".join(stopped), status_by_source
+    return "yellow", f"{len(stopped)}/{total} sources stopped (0 rows, 2 consecutive cycles) -- " + ", ".join(stopped), status_by_source
 
 
 # --- Log tail (read-only, bounded, no full-file scan) -----------------
@@ -304,7 +466,11 @@ def main() -> None:
         now = datetime.datetime.now(datetime.timezone.utc)
         freshness = fetch_last_snapshot_ts(client)
         test_start = fetch_test_start(client)
-        row_counts = fetch_row_counts_since(client, test_start)
+        row_counts_since_start = fetch_row_counts_since(client, test_start)
+        previous_ts, current_ts = fetch_last_two_snapshot_ts(client)
+        cycle_row_counts = fetch_source_row_counts_for_ts(
+            client, [ts for ts in (previous_ts, current_ts) if ts is not None]
+        )
         tier2_summary = fetch_tier2_summary(client)
         new_entity_count = fetch_new_entity_count_since(client, test_start)
         recent_new_entities = fetch_recent_new_entities(client)
@@ -313,12 +479,12 @@ def main() -> None:
         st.stop()
 
     # --- (a) health badge ---
-    level, reason = compute_health(freshness, now)
+    level, reason, status_by_source = compute_health_from_row_counts(cycle_row_counts, previous_ts, current_ts)
     badge = {"green": st.success, "yellow": st.warning, "red": st.error}[level]
     badge(f"**{level.upper()}** -- {reason}")
 
-    # --- (b) uptime ---
-    col1, col2, col3 = st.columns(3)
+    # --- (b) uptime / cycle age ---
+    col1, col2, col3, col4 = st.columns(4)
     if test_start is not None:
         uptime = now - test_start
         col1.metric("Test uptime", f"{uptime.days}d {uptime.seconds // 3600}h {(uptime.seconds % 3600) // 60}m")
@@ -326,32 +492,48 @@ def main() -> None:
     else:
         col1.metric("Test uptime", "n/a")
         col1.caption("no rows in dex_pool_snapshots or cex_symbol_snapshots yet")
-    col2.metric("new_entity_events since test start", new_entity_count)
-    fresh_count = sum(
-        1 for src in ALL_SOURCES if freshness.get(src) and (now - freshness[src]) <= datetime.timedelta(minutes=STALENESS_THRESHOLD_MIN)
-    )
-    col3.metric("Sources fresh", f"{fresh_count}/{len(ALL_SOURCES)}")
+    if current_ts is not None:
+        cycle_age = now - current_ts
+        col2.metric("Cycle age", f"{cycle_age.total_seconds() / 60:.1f}m")
+        col2.caption(
+            "time since the CURRENT cycle's shared snapshot_ts -- one value for "
+            "all 9 sources (they're stamped identically at cycle start), NOT a "
+            "per-source fetch-recency measure. A single cycle now runs "
+            "~8-8.5min, so ~0-9min here is normal, not stale."
+        )
+    else:
+        col2.metric("Cycle age", "n/a")
+        col2.caption("no cycle has completed yet")
+    col3.metric("new_entity_events since test start", new_entity_count)
+    ok_count = sum(1 for status in status_by_source.values() if status == "ok")
+    col4.metric("Sources active this cycle", f"{ok_count}/{len(ALL_SOURCES)}")
+    col4.caption('a source not yet "ok" may just have missed one cycle -- see the table below')
 
     # --- (c) per-source table ---
-    st.subheader("Per-source freshness")
+    st.subheader("Per-source status")
+    st.caption(
+        "\"status\" is based on whether each source wrote rows in the current "
+        "and previous COMPLETED cycle (see \"Cycle age\" above for why a "
+        "timestamp-based staleness column isn't shown here): ok = wrote rows "
+        "in the current completed cycle; pending = wrote 0 rows this "
+        "completed cycle but wrote in the one before -- could be a one-off "
+        "blip, being watched, not yet a confirmed problem; STOPPED = wrote 0 "
+        "rows in BOTH the current and previous completed cycle, a real "
+        "problem regardless of where the source sits in the execution order."
+    )
     rows = []
     for kind, sources in (("DEX", DEX_VENUES), ("CEX", CEX_EXCHANGES)):
         for src in sources:
             ts = freshness.get(src)
-            if ts is None:
-                staleness_min = None
-                status = "NO DATA"
-            else:
-                staleness_min = (now - ts).total_seconds() / 60
-                status = "fresh" if staleness_min <= STALENESS_THRESHOLD_MIN else "STALE"
             rows.append(
                 {
                     "source": src,
                     "kind": kind,
-                    "last_snapshot_ts (UTC)": ts.isoformat(sep=" ", timespec="seconds") if ts else "never",
-                    "staleness (min)": f"{staleness_min:.1f}" if staleness_min is not None else "n/a",
-                    "rows since test start": row_counts.get(src, 0),
-                    "status": status,
+                    "status": status_by_source.get(src, "pending"),
+                    "rows this cycle": cycle_row_counts.get(src, {}).get(current_ts, 0) if current_ts else 0,
+                    "rows previous cycle": cycle_row_counts.get(src, {}).get(previous_ts, 0) if previous_ts else 0,
+                    "last write ever (UTC)": ts.isoformat(sep=" ", timespec="seconds") if ts else "never",
+                    "rows since test start": row_counts_since_start.get(src, 0),
                 }
             )
     st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
