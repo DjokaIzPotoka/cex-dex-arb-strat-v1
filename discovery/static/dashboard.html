@@ -1,0 +1,76 @@
+<!--
+ZORA MEV Discovery -- Ops Dashboard (static frontend)
+
+Served by ops_dashboard_server.py (FastAPI) at GET /. Polls
+GET /api/status every 30s via dashboard.js and re-renders the dynamic
+parts in place -- this file itself never reloads. All layout/coloring
+logic mirrors the earlier Streamlit version's validated design
+(Bloomberg-terminal-style: dark, monospace, full-row status tinting)
+exactly -- see dashboard.css for the color tokens and dashboard.js for
+the render functions.
+
+Read-only: this page only ever calls GET /api/status. There is no form,
+no POST, nothing that could mutate scheduler/ClickHouse state from here.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZORA Discovery Ops</title>
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <div id="header">
+    ZORA MEV DISCOVERY &mdash; OPS
+    <span id="header-sub">read-only &middot; refreshes every 30s &middot; does not control the scheduler (make discovery-attach / discovery-stop)</span>
+  </div>
+
+  <!-- No sev-* class until the first /api/status response lands: the
+       strip must not assert a health color it hasn't measured yet. -->
+  <div id="status-strip" class="status-strip">
+    <span id="status-text" class="status-dot">&#9679; &hellip;</span>
+    <span class="seg">CYCLE AGE <b id="cycle-age">&hellip;</b></span>
+    <span class="seg">UPTIME <b id="uptime">&hellip;</b></span>
+    <span class="seg">NEW ENTITIES <b id="new-entities">&hellip;</b></span>
+    <span class="seg">RPC ERRORS <b id="rpc-errors">&hellip;</b></span>
+    <span class="seg">METEORA <b id="meteora-cursor">&hellip;</b></span>
+  </div>
+
+  <div class="two-col">
+    <div class="panel panel-left">
+      <div class="panel-label">SOURCES</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>SRC</th><th>TYPE</th><th>STATUS</th><th class="num">ROWS (CYCLE)</th></tr>
+        </thead>
+        <tbody id="sources-body"></tbody>
+      </table>
+    </div>
+    <div class="panel panel-right">
+      <div class="panel-label">TIER 2 HOT POOLS</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>REASON</th><th class="num">COUNT</th></tr>
+        </thead>
+        <tbody id="tier2-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="sparkline-section">
+    <div id="sparkline-caption" class="dim-caption">cycle duration, last 0 &middot; avg n/a</div>
+    <div id="sparkline-bars" class="sparkline-bars"></div>
+  </div>
+
+  <div id="log-header">
+    <span class="dim-caption">LOG &mdash; last <span id="log-scan-lines">&hellip;</span> lines scanned</span>
+    <span id="log-err-chip" class="chip">ERR 0</span>
+    <span id="log-warn-chip" class="chip">WARN 0</span>
+    <span class="dim-caption small">(excludes routine ghost-pool parse_skip noise)</span>
+  </div>
+  <div id="log-panel"></div>
+
+  <script src="/static/dashboard.js"></script>
+</body>
+</html>
