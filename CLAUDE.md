@@ -127,6 +127,8 @@ Key files: `discovery/src/providers/base.py` (DEX provider Protocols: `PoolMetad
 
 **ClickHouse HTTP field-size gotcha**: ClickHouse's HTTP interface enforces a per-form-field byte-size cap on parameterized-query bind values (confirmed empirically against a live 24.8 server: an `Array(String)` bind of ~1700 identifiers, ~77KB, succeeded in one query; ~4000 identifiers, ~178KB, failed with `HTML Form Exception: Field value too long` — consistent with Poco's ~128KiB default field-value limit). `clickhouse-connect`'s automatic GET→POST-form fallback for large bind params doesn't route around this, since the cap is enforced server-side on the field itself. `detect_new_entities()` in `detection.py` chunks its existence-check `IN`-list at `EXISTENCE_CHECK_CHUNK_SIZE` (1000 identifiers) to stay under it — keep this in mind before passing any large `Array(...)`-typed bind parameter to ClickHouse elsewhere in this subsystem.
 
+**Ops dashboard**: an ops dashboard for observing the scheduler (first a Streamlit prototype, then a FastAPI + static HTML/CSS/JS rewrite) was built and then abandoned/removed — not a fit for this subsystem's read-only, no-extra-service-dependency posture. A different approach (a scheduler telemetry heartbeat file plus a separate stdlib-only dashboard service, Phase 2a/2b) is planned for a following session; nothing from either prior attempt remains.
+
 ## Environment
 
 - `.env` (gitignored) holds `SOLANA_RPC_URL` — contains an embedded API key, must never be committed

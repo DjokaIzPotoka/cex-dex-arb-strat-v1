@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-test-rpc-crosscheck discovery-start discovery-stop discovery-status discovery-attach discovery-dashboard
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-test-rpc-crosscheck discovery-start discovery-stop discovery-status discovery-attach
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -187,21 +187,3 @@ discovery-status:
 	else \
 		printf "%-6s not running\n" "SCHED:"; \
 	fi
-
-# --- Ops dashboard (Phase 1i) ---
-# Read-only FastAPI + static HTML/CSS/JS observer for the running
-# scheduler/48h test -- see discovery/ops_dashboard_server.py's own
-# docstring for the read-only guarantee (replaced the earlier
-# Streamlit version: precise custom styling -- per-row status
-# coloring, dense table layout, monospace terminal look -- was easier
-# to get exactly right in plain HTML/CSS than through a widget
-# framework's own styling API). Reachable the same way as ClickHouse's
-# own Play UI (0.0.0.0, fixed port), independent of whether the
-# scheduler itself is running (it'll just show a red health badge /
-# "no data" if not). Foreground process, same as `discovery-attach` --
-# Ctrl-C to stop it; it never needs its own PID file/tmux session since
-# it controls nothing and there's nothing to leave running unattended.
-DISCOVERY_DASHBOARD_PORT := 8501
-discovery-dashboard:
-	@$(DISCOVERY_VENV)/bin/uvicorn discovery.ops_dashboard_server:app \
-		--app-dir "$(CURDIR)" --host 0.0.0.0 --port $(DISCOVERY_DASHBOARD_PORT)
