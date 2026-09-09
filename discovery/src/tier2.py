@@ -102,6 +102,15 @@ class GrowthEntry:
 
     hot_reason: str
     consecutive_below_threshold: int = 0
+    # Phase 2a (telemetry) only: the volume/TVL growth ratios computed
+    # the last time evaluate() re-scored this pool (whether or not that
+    # re-score changed anything) -- None until the first evaluate() call
+    # that finds this entry, same "not evaluable" meaning as
+    # _safe_growth()'s own None return. Not read anywhere in this
+    # module's own promotion/demotion decisions, which use the local
+    # `triggered` booleans computed fresh each call, not these fields.
+    last_volume_growth: Optional[float] = None
+    last_tvl_growth: Optional[float] = None
 
 
 class AgeBasedRegistry:
@@ -210,6 +219,14 @@ class GrowthBasedRegistry:
     def hot_reason(self, venue: str, pool_address: str) -> Optional[str]:
         entry = self._entries.get((venue, pool_address))
         return entry.hot_reason if entry else None
+
+    def entry(self, venue: str, pool_address: str) -> Optional[GrowthEntry]:
+        """Read-only lookup of a pool's full GrowthEntry (hot_reason,
+        consecutive_below_threshold, last-computed growth ratios) -- for
+        telemetry only (Phase 2a); every other caller in this module
+        uses hot_reason()/is_hot() instead.
+        """
+        return self._entries.get((venue, pool_address))
 
     def hot_keys(self) -> set[tuple[str, str]]:
         """Public snapshot of current membership -- see
@@ -376,14 +393,20 @@ class GrowthBasedRegistry:
                     # arbitrage angle -- an arbitrary but documented
                     # tiebreak, not a meaningful ranking claim.
                     reason = HOT_REASON_VOLUME_SPIKE if volume_triggered else HOT_REASON_TVL_SPIKE
-                    self._entries[key] = GrowthEntry(hot_reason=reason)
+                    self._entries[key] = GrowthEntry(
+                        hot_reason=reason, last_volume_growth=volume_growth, last_tvl_growth=tvl_growth
+                    )
                     promoted.append((venue, addr, reason))
                 else:
                     existing.consecutive_below_threshold = 0
+                    existing.last_volume_growth = volume_growth
+                    existing.last_tvl_growth = tvl_growth
                     still_hot.append((venue, addr))
             else:
                 if existing is not None:
                     existing.consecutive_below_threshold += 1
+                    existing.last_volume_growth = volume_growth
+                    existing.last_tvl_growth = tvl_growth
                     if existing.consecutive_below_threshold >= DEMOTION_CONSECUTIVE_CYCLES:
                         del self._entries[key]
                         demoted.append((venue, addr))

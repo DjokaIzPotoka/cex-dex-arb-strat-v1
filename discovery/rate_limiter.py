@@ -48,6 +48,34 @@ class TokenBucket:
             self._tokens = min(self._capacity, self._tokens + elapsed * self._refill_rate)
             self._last_refill = now
 
+    @property
+    def rate_per_s(self) -> float:
+        """Tokens/second this bucket refills at -- for telemetry only
+        (Phase 2a's `rate_limit_rps` field), a static property of the
+        bucket's construction, not a live measurement.
+        """
+        return self._refill_rate
+
+    def fill_pct(self) -> float:
+        """Best-effort snapshot of current fill level as a percentage of
+        capacity, for telemetry only (Phase 2a's `bucket_fill_pct`
+        field). Deliberately does NOT take `self._lock`: `consume()`
+        holds that lock for the full duration of any sleep it does
+        while waiting for tokens (see `consume()`'s own docstring), so
+        a caller blocking on the lock here could stall behind an
+        in-progress wait instead of getting an instant read -- exactly
+        the "without taking any lock the poll loop needs" requirement
+        this exists to satisfy. Reads `self._tokens`/`self._last_refill`
+        without synchronization and projects the refill that would have
+        happened by now; this is racy (a concurrent `consume()` could
+        be mid-refill at the exact same instant) but telemetry only
+        needs an approximate gauge, not a linearizable one.
+        """
+        now = time.monotonic()
+        elapsed = max(0.0, now - self._last_refill)
+        projected = min(self._capacity, self._tokens + elapsed * self._refill_rate)
+        return round(100.0 * projected / self._capacity, 1)
+
     def consume(self, amount: float = 1.0) -> None:
         """Blocks until `amount` tokens are available, then consumes
         them. Raises ValueError if `amount` exceeds the bucket's total

@@ -8,5 +8,6 @@ target/
 data/*.csv
 logs/
 discovery/.venv/
+discovery/run/
 __pycache__/
 *.pyc

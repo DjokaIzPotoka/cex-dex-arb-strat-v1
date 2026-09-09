@@ -137,6 +137,7 @@ from discovery.src.tier2 import (  # noqa: E402
     latest_dex_pools_by_base_symbol,
 )
 from discovery.src.tier2_poller import TIER2_POLL_INTERVAL_S, Tier2Poller  # noqa: E402
+from discovery.src.telemetry import RunTelemetry, segment_or_noop  # noqa: E402
 
 CYCLE_INTERVAL_S = 300.0
 
@@ -231,6 +232,7 @@ def _run_dex_source(
     snapshot_ts: datetime.datetime,
     tier2_state: Tier2State,
     meteora_cursor: Optional[MeteoraCursor] = None,
+    tel: Optional[RunTelemetry] = None,
 ) -> list[dict]:
     """Full broad pull for one DEX venue (Tier 1 -- "ceo DEX univerzum,
     bez izuzetka", section 3.2), dropping zero-24h-volume ghosts per
@@ -265,48 +267,63 @@ def _run_dex_source(
     src = DEX_SRC[venue]
     t0 = time.monotonic()
     log(Level.INFO, [("event", "source_start"), ("venue", venue)], src=src)
-    try:
-        rows: list[dict] = []
-        kept, dropped_ghost = 0, 0
-        pool_iter = (
-            provider.list_pools(cursor=meteora_cursor) if venue in PARTIAL_COVERAGE_VENUES else provider.list_pools()
-        )
-        for pool_row in pool_iter:
-            if pool_row.volume_24h_usd <= 0:
-                dropped_ghost += 1
-                continue
-            tier, hot_reason = tier2_state.tier_and_reason(venue, pool_row.pool_address)
-            rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
-            kept += 1
-        elapsed = time.monotonic() - t0
-        log(
-            Level.INFO,
-            [
-                ("event", "source_done"),
-                ("venue", venue),
-                ("kept", str(kept)),
-                ("dropped_ghost", str(dropped_ghost)),
-                ("elapsed_s", f"{elapsed:.1f}"),
-            ],
-            src=src,
-        )
-        return rows
-    except Exception as exc:  # noqa: BLE001 -- deliberately broad, see module docstring
-        elapsed = time.monotonic() - t0
-        log(
-            Level.ERROR,
-            [
-                ("event", "source_FAILED"),
-                ("venue", venue),
-                ("elapsed_s", f"{elapsed:.1f}"),
-                ("err", str(exc)),
-            ],
-            src=src,
-        )
-        return []
+    with segment_or_noop(
+        tel,
+        venue,
+        "source",
+        category="dex",
+        bucket=getattr(provider, "_bucket", None),
+        partial_coverage=venue in PARTIAL_COVERAGE_VENUES,
+    ) as seg:
+        try:
+            rows: list[dict] = []
+            kept, dropped_ghost = 0, 0
+            pool_iter = (
+                provider.list_pools(cursor=meteora_cursor)
+                if venue in PARTIAL_COVERAGE_VENUES
+                else provider.list_pools()
+            )
+            for pool_row in pool_iter:
+                if pool_row.volume_24h_usd <= 0:
+                    dropped_ghost += 1
+                    continue
+                tier, hot_reason = tier2_state.tier_and_reason(venue, pool_row.pool_address)
+                rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
+                kept += 1
+            elapsed = time.monotonic() - t0
+            seg.rows = kept
+            log(
+                Level.INFO,
+                [
+                    ("event", "source_done"),
+                    ("venue", venue),
+                    ("kept", str(kept)),
+                    ("dropped_ghost", str(dropped_ghost)),
+                    ("elapsed_s", f"{elapsed:.1f}"),
+                ],
+                src=src,
+            )
+            return rows
+        except Exception as exc:  # noqa: BLE001 -- deliberately broad, see module docstring
+            elapsed = time.monotonic() - t0
+            seg.failed = True
+            seg.error_class = type(exc).__name__
+            log(
+                Level.ERROR,
+                [
+                    ("event", "source_FAILED"),
+                    ("venue", venue),
+                    ("elapsed_s", f"{elapsed:.1f}"),
+                    ("err", str(exc)),
+                ],
+                src=src,
+            )
+            return []
 
 
-def _run_cex_source(exchange: str, provider, snapshot_ts: datetime.datetime) -> list[dict]:
+def _run_cex_source(
+    exchange: str, provider, snapshot_ts: datetime.datetime, tel: Optional[RunTelemetry] = None
+) -> list[dict]:
     """One exchangeInfo-shaped call for one CEX exchange, per section
     3.1 -- no filtering (section 3.7's "widen, don't filter" applies
     as-is on the CEX side, same as every run_*_snapshot.py CEX script).
@@ -315,29 +332,33 @@ def _run_cex_source(exchange: str, provider, snapshot_ts: datetime.datetime) -> 
     src = CEX_SRC[exchange]
     t0 = time.monotonic()
     log(Level.INFO, [("event", "source_start"), ("exchange", exchange)], src=src)
-    try:
-        symbols = provider.fetch_symbols()
-        rows = [s.to_snapshot_row(snapshot_ts) for s in symbols]
-        elapsed = time.monotonic() - t0
-        log(
-            Level.INFO,
-            [("event", "source_done"), ("exchange", exchange), ("rows", str(len(rows))), ("elapsed_s", f"{elapsed:.1f}")],
-            src=src,
-        )
-        return rows
-    except Exception as exc:  # noqa: BLE001 -- deliberately broad, see module docstring
-        elapsed = time.monotonic() - t0
-        log(
-            Level.ERROR,
-            [
-                ("event", "source_FAILED"),
-                ("exchange", exchange),
-                ("elapsed_s", f"{elapsed:.1f}"),
-                ("err", str(exc)),
-            ],
-            src=src,
-        )
-        return []
+    with segment_or_noop(tel, exchange, "source", category="cex", bucket=getattr(provider, "_bucket", None)) as seg:
+        try:
+            symbols = provider.fetch_symbols()
+            rows = [s.to_snapshot_row(snapshot_ts) for s in symbols]
+            elapsed = time.monotonic() - t0
+            seg.rows = len(rows)
+            log(
+                Level.INFO,
+                [("event", "source_done"), ("exchange", exchange), ("rows", str(len(rows))), ("elapsed_s", f"{elapsed:.1f}")],
+                src=src,
+            )
+            return rows
+        except Exception as exc:  # noqa: BLE001 -- deliberately broad, see module docstring
+            elapsed = time.monotonic() - t0
+            seg.failed = True
+            seg.error_class = type(exc).__name__
+            log(
+                Level.ERROR,
+                [
+                    ("event", "source_FAILED"),
+                    ("exchange", exchange),
+                    ("elapsed_s", f"{elapsed:.1f}"),
+                    ("err", str(exc)),
+                ],
+                src=src,
+            )
+            return []
 
 
 def _write_rows(client, table: str, rows: list[dict], src: str) -> None:
@@ -355,7 +376,14 @@ def _write_rows(client, table: str, rows: list[dict], src: str) -> None:
     log(Level.INFO, [("event", "clickhouse_insert"), ("table", table), ("rows", str(len(rows)))], src=src)
 
 
-def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteora_cursor: MeteoraCursor) -> float:
+def run_cycle(
+    client,
+    tier2_state: Tier2State,
+    tier2_poller: Tier2Poller,
+    meteora_cursor: MeteoraCursor,
+    tel: RunTelemetry,
+    cycle_n: int,
+) -> float:
     """Runs one full Tier 1 cycle: all 4 DEX venues, then all 5 CEX
     exchanges (sequential -- see module docstring), writing each
     source's rows to ClickHouse immediately, then one detect_new_entities
@@ -372,7 +400,13 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteor
     MeteoraCursor's own docstring) -- constructed once in main(), not
     here, since it must survive across cycles the way tier2_state does
     (this function's own local variables don't).
+
+    `tel`/`cycle_n` (Phase 2a): instrumentation only, see telemetry.py's
+    module docstring -- every tel.* call here is wrapped internally to
+    never raise, so none of this changes this function's own control
+    flow or return value.
     """
+    tel.cycle_start(cycle_n)
     cycle_start = time.monotonic()
     snapshot_ts = datetime.datetime.now(datetime.timezone.utc)
     log(Level.INFO, [("event", "cycle_start"), ("snapshot_ts", snapshot_ts.isoformat())], src=SCHEDULER_SRC)
@@ -385,9 +419,11 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteor
 
     dex_rows_by_venue: dict[str, list[dict]] = {}
     for venue, provider in _build_dex_providers().items():
-        rows = _run_dex_source(venue, provider, snapshot_ts, tier2_state, meteora_cursor=meteora_cursor)
+        rows = _run_dex_source(venue, provider, snapshot_ts, tier2_state, meteora_cursor=meteora_cursor, tel=tel)
         dex_rows_by_venue[venue] = rows
         _write_rows(client, "dex_pool_snapshots", rows, DEX_SRC[venue])
+        if venue in PARTIAL_COVERAGE_VENUES:
+            tel.record_meteora_cursor(meteora_cursor.snapshot())
         if rows:
             # Growth-based re-scoring against the prior Tier 1 cycle,
             # per section 3.2 ("re-evaluira se na svaki Tier 1
@@ -408,56 +444,69 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteor
                 client, venue, rows, snapshot_ts, partial_coverage=venue in PARTIAL_COVERAGE_VENUES
             )
         tier2_poller.maybe_poll()
+        tel.checkpoint()
 
     cex_rows_by_exchange: dict[str, list[dict]] = {}
     for exchange, provider in _build_cex_providers().items():
-        rows = _run_cex_source(exchange, provider, snapshot_ts)
+        rows = _run_cex_source(exchange, provider, snapshot_ts, tel=tel)
         cex_rows_by_exchange[exchange] = rows
         _write_rows(client, "cex_symbol_snapshots", rows, CEX_SRC[exchange])
         tier2_poller.maybe_poll()
+        tel.checkpoint()
 
+    # One "detection" segment for the whole cycle (both DEX and CEX
+    # loops below), not one per venue/exchange -- Phase 2a's
+    # cycle_telemetry table wants roughly 13 rows/cycle (9 sources +
+    # ~3 tier2_poll + 1 detection), not 9 more detection rows on top.
     total_checked, total_new = 0, 0
-    for venue, rows in dex_rows_by_venue.items():
-        if not rows:
-            # Source failed or (very unlikely) returned nothing real
-            # this cycle -- nothing to check, and detect_new_entities'
-            # empty-candidates no-op means known_entities/
-            # new_entity_events for this venue are simply untouched
-            # this cycle, not reset or corrupted.
-            continue
-        candidates = [build_dex_candidate(r) for r in rows]
-        result = detect_new_entities(client, ENTITY_TYPE_DEX_POOL, venue, candidates, snapshot_ts)
-        log(
-            Level.INFO,
-            [("event", "detection"), ("venue", venue), ("checked", str(result.checked)), ("new", str(result.new_count))],
-            src=DETECTION_SRC,
-        )
-        total_checked += result.checked
-        total_new += result.new_count
-        # Age-based promotion: exactly the pool_addresses
-        # detect_new_entities just confirmed have never been seen
-        # before, for this venue. Independent of growth-based (see
-        # tier2.py's module docstring) -- this never touches
-        # growth_based at all, even for a pool that happens to also
-        # trigger a growth spike on this same first cycle.
-        tier2_state.age_based.promote(venue, result.new_identifiers, snapshot_ts)
-
+    total_chunks = 0
     new_cex_symbols: list[tuple[str, str]] = []  # (exchange, base_asset), for new_listing matching below
-    for exchange, rows in cex_rows_by_exchange.items():
-        if not rows:
-            continue
-        candidates = [build_cex_candidate(r) for r in rows]
-        result = detect_new_entities(client, ENTITY_TYPE_CEX_SYMBOL, exchange, candidates, snapshot_ts)
-        log(
-            Level.INFO,
-            [("event", "detection"), ("exchange", exchange), ("checked", str(result.checked)), ("new", str(result.new_count))],
-            src=DETECTION_SRC,
-        )
-        total_checked += result.checked
-        total_new += result.new_count
-        if result.new_identifiers:
-            by_symbol = {row["symbol"]: row["base_asset"] for row in rows}
-            new_cex_symbols.extend((exchange, by_symbol[sym]) for sym in result.new_identifiers if sym in by_symbol)
+    with segment_or_noop(tel, "detection", "detection") as det_seg:
+        for venue, rows in dex_rows_by_venue.items():
+            if not rows:
+                # Source failed or (very unlikely) returned nothing real
+                # this cycle -- nothing to check, and detect_new_entities'
+                # empty-candidates no-op means known_entities/
+                # new_entity_events for this venue are simply untouched
+                # this cycle, not reset or corrupted.
+                continue
+            candidates = [build_dex_candidate(r) for r in rows]
+            result = detect_new_entities(client, ENTITY_TYPE_DEX_POOL, venue, candidates, snapshot_ts)
+            log(
+                Level.INFO,
+                [("event", "detection"), ("venue", venue), ("checked", str(result.checked)), ("new", str(result.new_count))],
+                src=DETECTION_SRC,
+            )
+            total_checked += result.checked
+            total_new += result.new_count
+            total_chunks += result.chunks
+            # Age-based promotion: exactly the pool_addresses
+            # detect_new_entities just confirmed have never been seen
+            # before, for this venue. Independent of growth-based (see
+            # tier2.py's module docstring) -- this never touches
+            # growth_based at all, even for a pool that happens to also
+            # trigger a growth spike on this same first cycle.
+            tier2_state.age_based.promote(venue, result.new_identifiers, snapshot_ts)
+
+        for exchange, rows in cex_rows_by_exchange.items():
+            if not rows:
+                continue
+            candidates = [build_cex_candidate(r) for r in rows]
+            result = detect_new_entities(client, ENTITY_TYPE_CEX_SYMBOL, exchange, candidates, snapshot_ts)
+            log(
+                Level.INFO,
+                [("event", "detection"), ("exchange", exchange), ("checked", str(result.checked)), ("new", str(result.new_count))],
+                src=DETECTION_SRC,
+            )
+            total_checked += result.checked
+            total_new += result.new_count
+            total_chunks += result.chunks
+            if result.new_identifiers:
+                by_symbol = {row["symbol"]: row["base_asset"] for row in rows}
+                new_cex_symbols.extend((exchange, by_symbol[sym]) for sym in result.new_identifiers if sym in by_symbol)
+
+        det_seg.rows = total_checked
+        det_seg.extra = {"new_count": total_new, "chunks": total_chunks}
 
     if new_cex_symbols:
         # One base_symbol lookup for the whole cycle, not per exchange
@@ -484,6 +533,7 @@ def run_cycle(client, tier2_state: Tier2State, tier2_poller: Tier2Poller, meteor
         ],
         src=SCHEDULER_SRC,
     )
+    tel.cycle_end()
     return elapsed
 
 
@@ -502,10 +552,16 @@ def main() -> None:
         src=SCHEDULER_SRC,
     )
 
+    # Phase 2a: constructed once here, same lifetime as tier2_state/
+    # meteora_cursor below -- see telemetry.py's module docstring.
+    # Passed into Tier2Poller so its own poll pass can be recorded as a
+    # segment too (tier2_poller.py's own docstring).
+    tel = RunTelemetry(client, target_cycle_s=CYCLE_INTERVAL_S)
+
     tier2_state = Tier2State()
     now = datetime.datetime.now(datetime.timezone.utc)
     tier2_state.age_based.seed_from_history(client, now)
-    tier2_poller = Tier2Poller(client, tier2_state)
+    tier2_poller = Tier2Poller(client, tier2_state, telemetry=tel)
     # Constructed once here, same lifetime/rationale as tier2_state --
     # see MeteoraCursor's own docstring (meteora_dlmm.py) and
     # CLAUDE.md's "Meteora sub-cycle pagination" section. A restart
@@ -514,9 +570,11 @@ def main() -> None:
     # gap to fix (a full sweep is only ~3 cycles / ~15 min).
     meteora_cursor = MeteoraCursor()
 
+    cycle_n = 0
     while not _shutdown_requested:
+        cycle_n += 1
         try:
-            elapsed = run_cycle(client, tier2_state, tier2_poller, meteora_cursor)
+            elapsed = run_cycle(client, tier2_state, tier2_poller, meteora_cursor, tel, cycle_n)
         except Exception:  # noqa: BLE001 -- last-resort guard, see comment below
             # Should be unreachable: every source and the detection
             # call already catch their own exceptions. But a scheduler-

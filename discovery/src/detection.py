@@ -88,6 +88,15 @@ class DetectionResult:
     venue: str
     checked: int
     new_identifiers: list[str]
+    # Phase 2a (telemetry) only: how many EXISTENCE_CHECK_CHUNK_SIZE-
+    # sized existence-check queries this call issued -- 0 for the
+    # empty-candidates no-op, 1 for every venue/exchange under the
+    # chunk size (the common case), more only for the handful of DEX
+    # venues large enough to need it (see EXISTENCE_CHECK_CHUNK_SIZE's
+    # own module comment). Doesn't change detect_new_entities' own
+    # query behavior at all, just reports how many chunks it already
+    # made.
+    chunks: int = 0
 
     @property
     def new_count(self) -> int:
@@ -167,13 +176,15 @@ def detect_new_entities(
     venue is a legitimate (if unusual) outcome, not a caller bug.
     """
     if not candidates:
-        return DetectionResult(entity_type=entity_type, venue=venue, checked=0, new_identifiers=[])
+        return DetectionResult(entity_type=entity_type, venue=venue, checked=0, new_identifiers=[], chunks=0)
 
     by_identifier = {c.identifier: c for c in candidates}
     all_identifiers = list(by_identifier.keys())
+    chunk_count = 0
 
     known_identifiers: set[str] = set()
     for start in range(0, len(all_identifiers), EXISTENCE_CHECK_CHUNK_SIZE):
+        chunk_count += 1
         chunk = all_identifiers[start : start + EXISTENCE_CHECK_CHUNK_SIZE]
         existing = client.query(
             "SELECT identifier FROM known_entities "
@@ -225,4 +236,5 @@ def detect_new_entities(
         venue=venue,
         checked=len(all_identifiers),
         new_identifiers=new_identifiers,
+        chunks=chunk_count,
     )

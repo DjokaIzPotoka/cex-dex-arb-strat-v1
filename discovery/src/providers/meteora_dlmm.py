@@ -76,6 +76,7 @@ base_fee_pct.
 """
 from __future__ import annotations
 
+import datetime
 import math
 from dataclasses import dataclass
 from typing import Iterator, Optional, Sequence
@@ -302,6 +303,16 @@ class MeteoraCursor:
 
     next_page: int = 1
 
+    # Phase 2a (telemetry) bookkeeping only, recorded as a side effect
+    # of take_slice() below -- never read or fed back into next_page's
+    # own advancement, so they carry no influence over the cursor's
+    # actual behavior, only a record of what it last did.
+    last_start_page: int = 0
+    last_end_page: int = 0
+    last_total_pages: int = 0
+    sweep_count: int = 0
+    last_wrap_at: Optional[datetime.datetime] = None
+
     def take_slice(self, total_pages: int, fraction: float = 1.0 / 3.0) -> tuple[int, int]:
         """Returns (start_page, end_page_inclusive) for this cycle's
         slice: `fraction` of total_pages (rounded up, at least 1),
@@ -330,7 +341,32 @@ class MeteoraCursor:
         start = ((self.next_page - 1) % total_pages) + 1
         end = min(start + slice_size - 1, total_pages)
         self.next_page = end + 1 if end < total_pages else 1
+
+        # Phase 2a telemetry bookkeeping (see the fields' own comment
+        # above) -- purely recording what was just computed, no effect
+        # on next_page or the slice returned below. A wrap (next_page
+        # reset to 1) means this slice's end reached total_pages, i.e.
+        # a full sweep of the universe just completed.
+        self.last_start_page, self.last_end_page, self.last_total_pages = start, end, total_pages
+        if self.next_page == 1:
+            self.sweep_count += 1
+            self.last_wrap_at = datetime.datetime.now(datetime.timezone.utc)
+
         return start, end
+
+    def snapshot(self) -> dict:
+        """Read-only view of this cursor's current page range, total
+        pages (as of the last take_slice() call), and completed-sweep
+        count -- for telemetry only (Phase 2a). Does not affect, and is
+        not affected by, take_slice()'s own advancement logic.
+        """
+        return {
+            "page_from": self.last_start_page,
+            "page_to": self.last_end_page,
+            "total_pages": self.last_total_pages,
+            "sweep_count": self.sweep_count,
+            "last_wrap_at": self.last_wrap_at.isoformat() if self.last_wrap_at else None,
+        }
 
 
 class MeteoraDlmmRestProvider:

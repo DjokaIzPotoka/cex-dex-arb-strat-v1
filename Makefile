@@ -1,4 +1,4 @@
-.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-test-rpc-crosscheck discovery-start discovery-stop discovery-status discovery-attach
+.PHONY: build rebuild start stop attach logs status clean discovery-build discovery-test discovery-test-raydium discovery-test-raydium-clmm discovery-test-meteora discovery-test-binance discovery-test-bybit discovery-test-okx discovery-test-bitget discovery-test-gateio discovery-test-entity-detection discovery-test-rpc-crosscheck discovery-start discovery-stop discovery-status discovery-attach discovery-dashboard discovery-dashboard-stop discovery-dashboard-status discovery-dashboard-attach
 
 CEX_BUILD_DIR := $(CURDIR)/build
 DEX_DIR := $(CURDIR)/ingestor-dex-solana
@@ -14,6 +14,11 @@ SPR_LOG := $(CURDIR)/logs/zora_spr.log
 
 DISCOVERY_SCHED_PID_FILE := /tmp/zora_discovery_sched.pid
 DISCOVERY_SCHED_LOG := $(CURDIR)/logs/zora_discovery_sched.log
+
+DISCOVERY_DASH_PID_FILE := /tmp/zora_discovery_dash.pid
+DISCOVERY_DASH_LOG := $(CURDIR)/logs/zora_discovery_dash.log
+DISCOVERY_DASH_BIND := $(if $(DISCOVERY_DASHBOARD_BIND),$(DISCOVERY_DASHBOARD_BIND),127.0.0.1)
+DISCOVERY_DASH_PORT := $(if $(DISCOVERY_DASHBOARD_PORT),$(DISCOVERY_DASHBOARD_PORT),8787)
 
 build:
 	@echo "Building CEX ingestor (C++, release)..."
@@ -186,4 +191,28 @@ discovery-status:
 		printf "%-6s running (PID %s)\n" "SCHED:" "$$(cat $(DISCOVERY_SCHED_PID_FILE))"; \
 	else \
 		printf "%-6s not running\n" "SCHED:"; \
+	fi
+
+# --- Discovery run monitor dashboard (Phase 2b) ---
+# Its own tmux session ('zora-discovery-dash', see
+# scripts/zora_discovery_dashboard.sh), separate from both 'zora' and
+# 'zora-discovery' -- a read-only viewer with its own lifecycle, never
+# started by discovery-start and never able to affect the scheduler.
+# Not gated on discovery-build/discovery-start: server.py is designed to
+# come up (and say so clearly) with the scheduler and/or ClickHouse down.
+discovery-dashboard:
+	@bash "$(CURDIR)/scripts/zora_discovery_dashboard.sh"
+
+discovery-dashboard-stop:
+	@bash "$(CURDIR)/scripts/stop_discovery_dashboard.sh"
+
+discovery-dashboard-attach:
+	@tmux attach -t zora-discovery-dash
+
+discovery-dashboard-status:
+	@echo "--- ZORA discovery dashboard status ---"; \
+	if [ -f "$(DISCOVERY_DASH_PID_FILE)" ] && kill -0 "$$(cat $(DISCOVERY_DASH_PID_FILE))" 2>/dev/null; then \
+		printf "%-6s running (PID %s) -- http://$(DISCOVERY_DASH_BIND):$(DISCOVERY_DASH_PORT)\n" "DASH:" "$$(cat $(DISCOVERY_DASH_PID_FILE))"; \
+	else \
+		printf "%-6s not running\n" "DASH:"; \
 	fi

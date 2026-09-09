@@ -132,6 +132,7 @@ for the incident CLAUDE.md's security note refers to).
 from __future__ import annotations
 
 import base64
+import time
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
@@ -169,6 +170,30 @@ GET_MULTIPLE_ACCOUNTS_BATCH_LIMIT = 100
 # raise this, at which point this constant (and the empirical test
 # behind it) should be re-run, not just bumped by guesswork.
 QUICKNODE_BATCH_LIMIT = 4
+
+# Phase 2a (telemetry) process-wide counters, read (never reset) by
+# telemetry.py's checkpoint() -- module-level rather than per-instance
+# since status.json's infra.solana_rpc is one aggregate figure across
+# both RPC-covered venues (Orca Whirlpool, Raydium CLMM), which each
+# get their own SolanaRpcStateProviderBase instance. Updated in
+# _get_multiple_accounts_raw below; never touched anywhere else, and
+# reading them never mutates them.
+_http_413_total = 0
+_last_call_ok = True
+_last_latency_ms: Optional[float] = None
+
+
+def get_http_413_total() -> int:
+    return _http_413_total
+
+
+def get_last_call_ok() -> bool:
+    return _last_call_ok
+
+
+def get_last_latency_ms() -> Optional[float]:
+    return _last_latency_ms
+
 
 # See module docstring's "Rate limiting" section for the 15 req/s
 # citation and the ~8.5 req/s combined-worst-case reasoning this is
@@ -381,10 +406,13 @@ class SolanaRpcStateProviderBase:
         failure-isolation shape as raydium_common.py's batch_skip, so
         one bad chunk doesn't take down pools in other chunks.
         """
+        global _http_413_total, _last_call_ok, _last_latency_ms
+
         result: dict[str, Optional[bytes]] = {}
         for i in range(0, len(addresses), QUICKNODE_BATCH_LIMIT):
             chunk = addresses[i : i + QUICKNODE_BATCH_LIMIT]
             self._bucket.consume()
+            t0 = time.monotonic()
             try:
                 resp = self._session.post(
                     self._rpc_url,
@@ -411,10 +439,17 @@ class SolanaRpcStateProviderBase:
                 # exception's context in any traceback this propagates
                 # into.
                 status = getattr(getattr(exc, "response", None), "status_code", None)
+                # Phase 2a telemetry only -- doesn't change retry/error
+                # behavior at all, just counts what already happened.
+                _last_call_ok = False
+                if status == 413:
+                    _http_413_total += 1
                 raise RuntimeError(
                     f"getMultipleAccounts request failed (status={status}): {type(exc).__name__}"
                 ) from None
+            _last_latency_ms = (time.monotonic() - t0) * 1000.0
             if "error" in body:
+                _last_call_ok = False
                 log(
                     Level.ERROR,
                     [
@@ -426,6 +461,7 @@ class SolanaRpcStateProviderBase:
                     ],
                 )
                 continue
+            _last_call_ok = True
             values = body["result"]["value"]
             for addr, account in zip(chunk, values):
                 if account is None:

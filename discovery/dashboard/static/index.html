@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZORA discovery · run monitor</title>
+<style>
+:root{
+  --bg:#0e141b; --panel:#141d26; --panel-2:#18232e;
+  --rule:#243342; --rule-soft:#1c2836;
+  --ink:#d7e2ec; --ink-dim:#8399ad; --ink-faint:#5c7286;
+
+  /* state — reserved, never used for identity */
+  --ok:#3fd68c; --stale:#f5b731; --bad:#ff5f5f;
+  --ok-bg:rgba(63,214,140,.12); --stale-bg:rgba(245,183,49,.13); --bad-bg:rgba(255,95,95,.13);
+
+  /* identity — sources */
+  --orca:#4fb2ff; --rclmm:#7d8dff; --ramm:#a97cff; --meteora:#e070d0;
+  --cex:#2fd4c8; --t2poll:#8fa3b8; --detect:#cfd9e3;
+
+  --mono:"JetBrains Mono","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:13px;line-height:1.35;-webkit-font-smoothing:antialiased}
+.app{padding:10px;display:flex;flex-direction:column;gap:10px}
+
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:3px}
+.panel-head{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--rule-soft);color:var(--ink-dim);font-size:12px}
+.panel-head .count{font-family:var(--mono);color:var(--ink-faint);font-size:11px}
+.spacer{flex:1}
+.legend{display:flex;gap:11px;font-size:11px;color:var(--ink-faint);flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:1px;margin-right:4px;vertical-align:-1px}
+
+/* ---- run rail ---- */
+.runrail{display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--rule);border-left:3px solid var(--ok);border-radius:3px;padding:9px 12px}
+.runrail.is-stale{border-left-color:var(--stale)}
+.runrail.is-bad{border-left-color:var(--bad)}
+.runtitle{font-family:var(--mono);font-weight:700;font-size:15px;letter-spacing:-.02em}
+.runtitle .sub{color:var(--ink-faint);font-weight:400;margin-left:8px;font-size:12px}
+.rf{display:flex;flex-direction:column;gap:1px}
+.rf .k{font-size:10.5px;color:var(--ink-faint)}
+.rf .v{font-family:var(--mono);font-size:13px}
+.statuspill{font-family:var(--mono);font-size:12px;font-weight:700;padding:4px 10px;border-radius:2px}
+.statuspill.ok{background:var(--ok-bg);color:var(--ok);box-shadow:inset 0 0 0 1px rgba(63,214,140,.35)}
+.statuspill.stale{background:var(--stale-bg);color:var(--stale);box-shadow:inset 0 0 0 1px rgba(245,183,49,.35)}
+.statuspill.bad{background:var(--bad-bg);color:var(--bad);box-shadow:inset 0 0 0 1px rgba(255,95,95,.4)}
+.toolbtn{font-family:var(--sans);font-size:11.5px;background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--rule);border-radius:2px;padding:4px 9px;cursor:pointer}
+.toolbtn:hover{color:var(--ink);border-color:#31465a}
+.toolbtn:focus-visible{outline:2px solid var(--orca);outline-offset:1px}
+.toolbtn.on{color:var(--ink);border-color:#3c556c;background:#1e2c39}
+
+/* ---- cycle timeline (signature) ---- */
+.cycleband{display:grid;grid-template-columns:1fr 300px;gap:10px}
+@media (max-width:1200px){.cycleband{grid-template-columns:1fr}}
+.gantt{padding:12px 12px 8px;position:relative}
+.gantt .track{position:relative;height:34px;background:#101922;border:1px solid var(--rule-soft);border-radius:2px;overflow:hidden;display:flex}
+.seg{height:100%;position:relative;flex:none;border-right:1px solid rgba(14,20,27,.85)}
+.seg:last-child{border-right:none}
+.seg.running{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{filter:brightness(1.45)}}
+.gantt .axis{position:relative;height:20px;margin-top:4px;font-family:var(--mono);font-size:10px;color:var(--ink-faint)}
+.gantt .tickline{position:absolute;top:-38px;bottom:16px;width:1px;background:#2b3c4d}
+.gantt .target{position:absolute;top:-38px;bottom:16px;width:2px;background:var(--stale)}
+.gantt .target b{position:absolute;top:-14px;left:4px;color:var(--stale);font-weight:700;white-space:nowrap;font-size:10px}
+.overrun{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,rgba(255,95,95,.16) 0 6px,rgba(255,95,95,.05) 6px 12px);pointer-events:none}
+.seglabels{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+.seglabels span i{display:inline-block;width:8px;height:8px;border-radius:1px;margin-right:4px}
+
+/* ---- meteora cursor ---- */
+.cursorbox{padding:10px 12px;display:flex;flex-direction:column;gap:9px}
+.pagestrip{display:flex;gap:1px;height:22px}
+.pagecell{flex:1;background:#1c2836;border-radius:1px}
+.pagecell.swept{background:#3a4d5f}
+.pagecell.current{background:var(--meteora)}
+.cursorrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px}
+.cursorrow .k{color:var(--ink-faint);font-family:var(--sans);font-size:11px}
+.warnnote{font-size:11px;color:var(--stale);background:var(--stale-bg);border-left:2px solid var(--stale);padding:5px 7px;border-radius:2px;line-height:1.4}
+
+/* ---- sources ---- */
+.srcgroups{display:grid;grid-template-columns:2fr 2.2fr 1fr;gap:10px}
+@media (max-width:1200px){.srcgroups{grid-template-columns:1fr}}
+.srcgrid{display:grid;gap:6px;padding:8px}
+.g-dex{grid-template-columns:repeat(2,1fr)}
+.g-cex{grid-template-columns:repeat(3,1fr)}
+.g-inf{grid-template-columns:repeat(2,1fr)}
+.src{background:var(--panel-2);border:1px solid var(--rule);border-radius:2px;padding:6px 8px;border-left:3px solid var(--ok);display:flex;flex-direction:column;gap:4px}
+.src.stale{border-left-color:var(--stale)}
+.src.bad{border-left-color:var(--bad)}
+.src .n{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+.src.stale .dot{background:var(--stale)}
+.src.bad .dot{background:var(--bad);animation:blink 1.1s steps(2,end) infinite}
+@keyframes blink{50%{opacity:.2}}
+.src .st{font-family:var(--mono);font-size:10.5px;font-weight:700}
+.src.ok .st{color:var(--ok)} .src.stale .st{color:var(--stale)} .src.bad .st{color:var(--bad)}
+.src .m{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;color:var(--ink-dim)}
+.bucket{height:3px;background:#1f2c38;border-radius:1px;overflow:hidden}
+.bucket span{display:block;height:100%;background:var(--orca)}
+.bucket.hot span{background:var(--stale)}
+.bucket.full span{background:var(--bad)}
+
+/* ---- counters ---- */
+.counters{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+@media (max-width:1200px){.counters{grid-template-columns:repeat(4,1fr)}}
+.ctr{background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:8px 10px}
+.ctr .k{font-size:10.5px;color:var(--ink-faint);margin-bottom:3px}
+.ctr .v{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.ctr .u{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:2px}
+
+/* ---- charts ---- */
+canvas{display:block;width:100%}
+#cyclehist{height:120px}
+.chartwrap{padding:8px 10px 4px;position:relative}
+.tooltip{position:absolute;pointer-events:none;opacity:0;transition:opacity .08s;background:#0a1017;border:1px solid var(--rule);border-radius:2px;padding:5px 7px;font-family:var(--mono);font-size:11px;white-space:pre;z-index:5}
+
+/* ---- feeds & tables ---- */
+.midband{display:grid;grid-template-columns:1fr 400px;gap:10px}
+@media (max-width:1280px){.midband{grid-template-columns:1fr}}
+.feed{max-height:250px;overflow-y:auto}
+.ev{display:grid;grid-template-columns:64px 1fr;gap:8px;padding:6px 10px;border-bottom:1px solid var(--rule-soft);border-left:2px solid transparent}
+.ev.promote{border-left-color:var(--ok);background:rgba(63,214,140,.05)}
+.ev.demote{border-left-color:var(--stale);background:rgba(245,183,49,.05)}
+.ev.newent{border-left-color:var(--meteora);background:rgba(224,112,208,.05)}
+.ev .ts{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+.ev .body{font-family:var(--mono);font-size:11.5px}
+.ev .verb{font-weight:700}
+.ev.promote .verb{color:var(--ok)} .ev.demote .verb{color:var(--stale)} .ev.newent .verb{color:var(--meteora)}
+.reason{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:1px 5px;border-radius:2px;margin-left:6px;background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--rule)}
+.reason.age{color:var(--rclmm);border-color:#33406b}
+.reason.growth{color:var(--ok);border-color:#245740}
+.reason.listing{color:var(--cex);border-color:#1f5450}
+
+.tablewrap{overflow:auto;max-height:330px}
+table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:11.5px}
+thead th{position:sticky;top:0;z-index:2;background:var(--panel-2);color:var(--ink-faint);font-family:var(--sans);font-size:10.5px;font-weight:500;text-align:left;padding:5px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody td{padding:4px 8px;border-bottom:1px solid var(--rule-soft);white-space:nowrap}
+tbody tr:hover{background:#182430}
+.num{text-align:right}
+.chip{display:inline-block;padding:1px 6px;border-radius:2px;font-weight:700;font-size:10.5px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.stale{background:var(--stale-bg);color:var(--stale)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.rpc{background:rgba(125,141,255,.14);color:var(--rclmm)}
+.chip.rest{background:rgba(143,163,184,.14);color:var(--t2poll)}
+tr.row-stale{background:rgba(245,183,49,.07)}
+tr.row-stale:hover{background:rgba(245,183,49,.12)}
+tr.row-dead{background:rgba(255,95,95,.08)}
+tr.row-dead:hover{background:rgba(255,95,95,.13)}
+.agebar{position:relative;width:64px;height:5px;border-radius:1px;background:#1f2c38;overflow:hidden;display:inline-block;vertical-align:middle}
+.agebar span{position:absolute;left:0;top:0;bottom:0;background:var(--ok)}
+.agebar.warn span{background:var(--stale)}
+.agebar.over span{background:var(--bad)}
+.pips{display:inline-flex;gap:2px;vertical-align:middle}
+.pip{width:6px;height:6px;border-radius:1px;background:#26333f}
+.pip.on{background:var(--stale)}
+.addr{color:var(--ink-faint)}
+.venue{color:var(--ink-dim)}
+.placeholder{color:var(--stale);font-style:normal}
+
+/* ---- logs ---- */
+tr.lvl-error{background:var(--bad-bg)}
+tr.lvl-error:hover{background:rgba(255,95,95,.2)}
+tr.lvl-warn{background:var(--stale-bg)}
+tr.lvl-warn:hover{background:rgba(245,183,49,.2)}
+tr.lvl-debug td{color:var(--ink-faint)}
+.lvltag{font-weight:700;font-size:10.5px}
+.lvl-info .lvltag{color:var(--orca)}
+.lvl-warn .lvltag{color:var(--stale)}
+.lvl-error .lvltag{color:var(--bad)}
+.lvl-debug .lvltag{color:var(--ink-faint)}
+.kv .k{color:var(--ink-faint)}
+.kv .v{color:var(--ink)}
+.msg{white-space:pre-wrap;word-break:break-word}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- degraded-state additions (Phase 2b) ---- */
+.greyed{opacity:.5;filter:grayscale(.35);pointer-events:none}
+.schemabanner{background:var(--bad-bg);border:1px solid var(--bad);color:var(--bad);border-radius:3px;padding:9px 12px;font-family:var(--mono);font-size:12px;font-weight:700}
+.histerr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--stale);font-family:var(--mono);font-size:11.5px;background:rgba(14,20,27,.82);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="schemabanner" id="schemabanner" hidden></div>
+
+  <div class="runrail" id="runrail">
+    <div class="runtitle">ZORA<span class="sub">discovery run monitor</span></div>
+    <div class="rf"><span class="k">Run</span><span class="v" id="f-run">disc_20260831_0714</span></div>
+    <div class="rf"><span class="k">Started</span><span class="v" id="f-started">07:14:02</span></div>
+    <div class="rf"><span class="k">Elapsed</span><span class="v" id="f-elapsed">00:00:00</span></div>
+    <div class="rf"><span class="k">Cycle</span><span class="v" id="f-cycle">#0</span></div>
+    <div class="rf"><span class="k">Now running</span><span class="v" id="f-now">—</span></div>
+    <div class="spacer"></div>
+    <span class="statuspill ok" id="f-status">ALL SOURCES OK</span>
+    <button class="toolbtn on" id="btn-pause">Pause</button>
+  </div>
+
+  <!-- ===== cycle timeline + meteora cursor ===== -->
+  <div class="cycleband">
+    <div class="panel">
+      <div class="panel-head">
+        Cycle execution timeline
+        <span class="count" id="gantt-sub">sequential, single thread</span>
+        <span class="spacer"></span>
+        <span class="legend" id="gantt-legend"></span>
+      </div>
+      <div class="gantt" id="gantt">
+        <div class="track" id="track"></div>
+        <div class="axis" id="axis"></div>
+        <div class="seglabels" id="seglabels"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">Meteora sweep cursor <span class="count" id="mc-cov">partial coverage</span></div>
+      <div class="cursorbox">
+        <div class="pagestrip" id="pagestrip"></div>
+        <div class="cursorrow"><span class="k">This cycle</span><span id="mc-range">pages 43–84</span></div>
+        <div class="cursorrow"><span class="k">Universe</span><span id="mc-total">126 pages · ~126k pools</span></div>
+        <div class="cursorrow"><span class="k">Full sweep in</span><span id="mc-wrap">2 cycles (~16m)</span></div>
+        <div class="cursorrow"><span class="k">Last wraparound</span><span id="mc-last">07:31:40</span></div>
+        <div class="warnnote">Full-universe coverage holds every ~3 cycles for meteora_dlmm only. Page boundaries can drift mid-sweep — a pool may land in two slices or none.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== sources ===== -->
+  <div class="srcgroups">
+    <div class="panel">
+      <div class="panel-head">DEX venues <span class="count">4 sources · full coverage except meteora</span></div>
+      <div class="srcgrid g-dex" id="grid-dex"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">CEX exchanges <span class="count">5 symbol providers</span></div>
+      <div class="srcgrid g-cex" id="grid-cex"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Infrastructure</div>
+      <div class="srcgrid g-inf" id="grid-inf"></div>
+    </div>
+  </div>
+
+  <!-- ===== counters ===== -->
+  <div class="counters">
+    <div class="ctr"><div class="k">Rows written</div><div class="v" id="c-rows">0</div><div class="u" id="c-rows-sub">snapshot tables</div></div>
+    <div class="ctr"><div class="k">Cycles finished</div><div class="v" id="c-cycles">0</div><div class="u" id="c-cyclesub">avg 0s</div></div>
+    <div class="ctr"><div class="k">Cycle duration</div><div class="v" id="c-dur">0s</div><div class="u" id="c-durs">target 300s</div></div>
+    <div class="ctr"><div class="k">Tier 1 universe</div><div class="v" id="c-t1">0</div><div class="u">pools seen this cycle</div></div>
+    <div class="ctr"><div class="k">Tier 2 hot</div><div class="v" id="c-t2">0</div><div class="u" id="c-t2sub">age 0 · growth 0</div></div>
+    <div class="ctr"><div class="k">New entities</div><div class="v" id="c-new">0</div><div class="u">this run</div></div>
+    <div class="ctr"><div class="k">RPC 413s</div><div class="v" id="c-413">0</div><div class="u">batch limit 4</div></div>
+    <div class="ctr"><div class="k">Errors</div><div class="v" id="c-err">0</div><div class="u" id="c-errsub">isolated per source</div></div>
+  </div>
+
+  <!-- ===== history + events ===== -->
+  <div class="midband">
+    <div class="panel">
+      <div class="panel-head">
+        Cycle duration history
+        <span class="count">last 40 cycles, stacked by source</span>
+        <span class="spacer"></span>
+        <span class="legend"><span><i style="background:var(--stale)"></i>300s target</span></span>
+      </div>
+      <div class="chartwrap">
+        <canvas id="cyclehist"></canvas>
+        <div class="tooltip" id="hist-tip"></div>
+        <div class="histerr" id="hist-error" hidden></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">Tier 2 registry and detection events <span class="count" id="ev-count">0</span></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <!-- ===== tier 2 hot pools ===== -->
+  <div class="panel">
+    <div class="panel-head">
+      Tier 2 hot pools
+      <span class="count" id="hot-count">0 pools</span>
+      <span class="spacer"></span>
+      <span class="legend">
+        <span><i style="background:var(--ok)"></i>polled &lt; 60s</span>
+        <span><i style="background:var(--stale)"></i>STALE</span>
+        <span><i style="background:var(--bad)"></i>no response</span>
+        <span>hysteresis pips = consecutive cycles below threshold</span>
+      </span>
+    </div>
+    <div class="tablewrap">
+      <table id="hottable">
+        <thead><tr>
+          <th>Pool</th><th>Venue</th><th>Pair</th><th>Path</th>
+          <th class="num">price_native</th><th class="num">active_liquidity</th>
+          <th class="num">vol growth</th><th class="num">tvl growth</th>
+          <th>Last poll</th><th>Freshness</th><th>hot_reason</th><th>Hysteresis</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== logs ===== -->
+  <div class="panel">
+    <div class="panel-head">
+      Run log
+      <span class="count" id="log-count">0 lines</span>
+      <span class="spacer"></span>
+      <span class="legend" style="margin-right:8px">HH:MM:SS.mmm  LEVEL  SRC  key=value</span>
+      <span style="display:flex;gap:4px" id="logfilters">
+        <button class="toolbtn on" data-lvl="ALL">All</button>
+        <button class="toolbtn" data-lvl="DEBUG">Debug</button>
+        <button class="toolbtn" data-lvl="INFO">Info</button>
+        <button class="toolbtn" data-lvl="WARN">Warn</button>
+        <button class="toolbtn" data-lvl="ERROR">Error</button>
+      </span>
+    </div>
+    <div class="tablewrap" id="logwrap" style="max-height:280px">
+      <table id="logtable">
+        <thead><tr><th style="width:105px">Time</th><th style="width:56px">Level</th><th style="width:170px">SRC</th><th>Fields</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   CONSTANTS — mirror CLAUDE.md / discovery source constants. No fetch for
+   these: they're fixed invariants of the design, not runtime state.
+   EXPECTED_SCHEMA_VERSION mirrors discovery/src/telemetry.py's
+   SCHEMA_VERSION and discovery/dashboard/server.py's own copy of it.
+   ========================================================================== */
+
+const CYCLE_TARGET   = 300;   // section 3.2 Tier 1 cycle target
+const T2_REPOLL      = 60;    // Tier 2 re-poll cadence
+const MAX_PER_VENUE  = 100;   // MAX_POOLS_PER_VENUE_PER_POLL
+const QN_BATCH       = 4;     // QUICKNODE_BATCH_LIMIT
+const CH_CHUNK       = 1000;  // EXISTENCE_CHECK_CHUNK_SIZE
+const EXPECTED_SCHEMA_VERSION = 1;
+
+// Static identity/coloring for the known 9 sources -- /api/status reports
+// per-source health by id but carries no display color, so that mapping
+// stays client-side (same as the original mock's SOURCES table, minus the
+// simulated health fields, which now come from the server every poll).
+const SOURCE_META = {
+  orca_whirlpool: {kind:"dex", color:"var(--orca)"},
+  raydium_clmm:   {kind:"dex", color:"var(--rclmm)"},
+  raydium_amm_v4: {kind:"dex", color:"var(--ramm)"},
+  meteora_dlmm:   {kind:"dex", color:"var(--meteora)"},
+  binance:        {kind:"cex", color:"var(--cex)"},
+  bybit:          {kind:"cex", color:"var(--cex)"},
+  okx:            {kind:"cex", color:"var(--cex)"},
+  bitget:         {kind:"cex", color:"var(--cex)"},
+  gateio:         {kind:"cex", color:"var(--cex)"},
+};
+const INFRA_META = {
+  clickhouse: {label:"clickhouse", note:"zora_discovery"},
+  solana_rpc: {label:"solana_rpc", note:"discover plan"},
+};
+function segColor(name, kind){
+  if (SOURCE_META[name]) return SOURCE_META[name].color;
+  if (kind==="tier2_poll") return "var(--t2poll)";
+  if (kind==="detection") return "var(--detect)";
+  return "var(--ink-faint)";
+}
+
+/* ==========================================================================
+   STATE — holds the latest payload from each endpoint, nothing simulated.
+   ========================================================================== */
+
+const state = {
+  status: null,          // last /api/status payload (or null before the first poll)
+  statusFetchError: null,
+  history: null,          // last *successful* /api/history payload {run_id, cycles}
+  historyCycles: [],       // history.cycles, reshaped to {n,total,parts} for drawHist/gantt-fallback
+  historyError: null,      // set when the last /api/history call failed or returned {error}
+  logs: [],               // last /api/logs "lines" (server returns newest-first already)
+  logFilter: "ALL",
+  paused: false,
+};
+
+/* helpers */
+const pad=n=>String(n).padStart(2,"0");
+const hms=s=>pad(Math.floor(s/3600))+":"+pad(Math.floor(s/60)%60)+":"+pad(Math.floor(s)%60);
+const clock=d=>pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());
+const commas=n=>Math.round(n).toLocaleString("en-US");
+function compact(n){if(n>=1e9)return (n/1e9).toFixed(2)+"B";if(n>=1e6)return (n/1e6).toFixed(2)+"M";if(n>=1e3)return (n/1e3).toFixed(1)+"K";return String(Math.round(n));}
+function price(p){return p<0.001?p.toExponential(4):p.toFixed(p<1?5:4);}
+function escapeHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+/* live/degraded-state derivation, shared by every render function below */
+function isLive(){ return !!state.status && state.status.scheduler !== "not_running"; }
+function isSchemaMismatch(){ return !!(state.status && state.status.schema_mismatch); }
+function isRenderableLive(){ return isLive() && !isSchemaMismatch(); }
+
+/* ==========================================================================
+   FETCH LAYER — /api/status every 2s, /api/logs every 3s, /api/history
+   every 30s. Each poll re-renders only the panels it can affect; a failed
+   poll keeps whatever was last known rather than blanking anything (see
+   each render function's own degraded-state handling).
+   ========================================================================== */
+
+async function fetchJSON(url){
+  const res = await fetch(url, {cache:"no-store"});
+  return res.json();
+}
+
+async function pollStatus(){
+  if (state.paused) return;
+  try{
+    state.status = await fetchJSON("/api/status");
+    state.statusFetchError = null;
+  }catch(e){
+    // Network-level failure (dashboard server itself unreachable) -- keep
+    // the last-known status rather than discarding it; the rail already
+    // reflects whatever that last payload said.
+    state.statusFetchError = String(e);
+  }
+  renderSchemaBanner();
+  renderRail();
+  renderSources();
+  renderCounters();
+  renderGantt();
+  renderCursor();
+  renderHot();
+}
+
+async function pollHistory(){
+  if (state.paused) return;
+  try{
+    const data = await fetchJSON("/api/history?limit=40");
+    if (data.error){
+      state.historyError = data.error;
+      // Keep state.history/historyCycles as they were -- a transient
+      // ClickHouse outage shouldn't erase the last-good chart.
+    } else {
+      state.history = data;
+      state.historyCycles = (data.cycles||[]).map(c=>({
+        n: c.n,
+        total: c.total_s,
+        parts: (c.segments||[]).map(s=>({label:s.name, dur:s.duration_s, color:segColor(s.name,s.kind), failed:s.failed})),
+      }));
+      state.historyError = null;
+    }
+  }catch(e){
+    state.historyError = String(e);
+  }
+  renderHistoryPanel();
+  renderGantt();   // the not_running fallback path reads state.historyCycles
+  renderCounters(); // avg-cycle-duration sub-line reads history too
+}
+
+async function pollLogs(){
+  if (state.paused) return;
+  try{
+    const lvl = state.logFilter === "ALL" ? "" : state.logFilter;
+    const data = await fetchJSON("/api/logs?limit=220" + (lvl ? ("&level="+encodeURIComponent(lvl)) : ""));
+    state.logs = data.lines || [];
+  }catch(e){
+    // Keep the last-known log tail rather than blanking the panel.
+  }
+  renderLogs();
+  renderFeed();
+}
+
+/* ==========================================================================
+   RENDER
+   ========================================================================== */
+
+function renderSchemaBanner(){
+  const banner = document.getElementById("schemabanner");
+  const st = state.status;
+  if (st && st.schema_mismatch){
+    banner.hidden = false;
+    banner.textContent = "Schema mismatch: dashboard expects schema_version "+EXPECTED_SCHEMA_VERSION+
+      ", scheduler is writing schema_version "+st.schema_version+". Live panels are paused until this is resolved.";
+  } else {
+    banner.hidden = true;
+  }
+}
+
+function railClass(){
+  const st = state.status;
+  if (!st || st.scheduler === "not_running") return "bad";
+  if (st.schema_mismatch) return "bad";
+  if (st.heartbeat_stale) return "stale";
+  const srcBad = (st.sources||[]).some(s=>s.state==="bad") || Object.values(st.infra||{}).some(i=>i.state==="bad");
+  const srcStale = (st.sources||[]).some(s=>s.state==="stale");
+  if (srcBad) return "bad";
+  if (srcStale) return "stale";
+  return "ok";
+}
+
+function pillText(){
+  const st = state.status;
+  if (!st || st.scheduler === "not_running") return "SCHEDULER NOT RUNNING";
+  if (st.schema_mismatch) return "SCHEMA MISMATCH · got v"+st.schema_version+" want v"+EXPECTED_SCHEMA_VERSION;
+  if (st.heartbeat_stale) return "NO HEARTBEAT FOR "+Math.round(st.heartbeat_age_s)+"s";
+  const cls = railClass();
+  if (cls === "ok") return "ALL SOURCES OK";
+  const badNames = (st.sources||[]).filter(s=>s.state!=="ok").map(s=>s.id)
+    .concat(Object.entries(st.infra||{}).filter(([,v])=>v.state!=="ok").map(([k])=>k));
+  return (cls==="stale" ? "DEGRADED · " : "FAILED · ") + badNames.join(", ");
+}
+
+function renderRail(){
+  const st = state.status;
+  const cls = railClass();
+  document.getElementById("runrail").className = "runrail is-"+cls;
+  const pill = document.getElementById("f-status");
+  pill.className = "statuspill "+cls;
+  pill.textContent = pillText();
+
+  document.getElementById("f-run").textContent = (st && st.run_id) || "—";
+  document.getElementById("f-started").textContent = (st && st.started_at) ? clock(new Date(st.started_at)) : "—";
+
+  const live = isRenderableLive();
+  if (live){
+    const elapsedS = (Date.now() - new Date(st.started_at).getTime())/1000;
+    document.getElementById("f-elapsed").textContent = hms(Math.max(0, elapsedS));
+    document.getElementById("f-cycle").textContent = "#"+((st.cycle && st.cycle.n) || (st.counters && st.counters.cycles_completed) || 0);
+    const cur = st.cycle && st.cycle.current_segment;
+    document.getElementById("f-now").textContent = (cur && !st.heartbeat_stale) ? (cur.name+" ("+cur.elapsed_s.toFixed(0)+"s)") : "—";
+  } else {
+    document.getElementById("f-elapsed").textContent = "—";
+    document.getElementById("f-cycle").textContent = (st && st.counters) ? "#"+st.counters.cycles_completed : "#0";
+    document.getElementById("f-now").textContent = "—";
+  }
+}
+
+function srcCard(s){
+  const st = s.state;
+  const stateLabel = st==="ok" ? "OK" : st==="stale" ? "STALE" : "FAILED";
+  const bucket = (s.bucket_fill_pct===null || s.bucket_fill_pct===undefined) ? null : s.bucket_fill_pct/100;
+  const bcls = bucket===null ? "bucket" : bucket>0.9 ? "bucket full" : bucket>0.7 ? "bucket hot" : "bucket";
+  const right = (s.last_duration_s!==null && s.last_duration_s!==undefined) ? s.last_duration_s.toFixed(0)+"s" : "—";
+  const sub = (s.last_rows!==null && s.last_rows!==undefined) ? commas(s.last_rows)+" rows" : "—";
+  return '<div class="src '+st+'">'+
+    '<div class="n"><span class="dot"></span>'+escapeHtml(s.id)+'</div>'+
+    '<div class="st">'+stateLabel+(s.consecutive_failures?" ·"+s.consecutive_failures+"×":"")+'</div>'+
+    '<div class="m"><span>'+sub+'</span><span>'+right+'</span></div>'+
+    (bucket===null ? "" : '<div class="'+bcls+'"><span style="width:'+Math.round(bucket*100)+'%"></span></div>')+
+  '</div>';
+}
+
+function infraCard(id, v){
+  const stateCls = v.state || "ok";
+  const stateLabel = stateCls==="ok" ? "OK" : stateCls==="stale" ? "STALE" : "FAILED";
+  const latency = id==="clickhouse" ? v.last_insert_ms : v.last_latency_ms;
+  const right = (latency!==null && latency!==undefined) ? latency.toFixed(0)+"ms" : "—";
+  const meta = INFRA_META[id] || {label:id, note:""};
+  const sub = (stateCls!=="ok" && v.last_error) ? escapeHtml(String(v.last_error)).slice(0,60) : meta.note;
+  return '<div class="src '+stateCls+'">'+
+    '<div class="n"><span class="dot"></span>'+meta.label+'</div>'+
+    '<div class="st">'+stateLabel+'</div>'+
+    '<div class="m"><span>'+sub+'</span><span>'+right+'</span></div>'+
+  '</div>';
+}
+
+function emptySrcCard(label){
+  return '<div class="src"><div class="n"><span class="dot"></span>'+escapeHtml(label)+'</div>'+
+    '<div class="st">—</div><div class="m"><span>—</span><span>—</span></div></div>';
+}
+
+function renderSources(){
+  const live = isRenderableLive();
+  const dexIds = Object.keys(SOURCE_META).filter(k=>SOURCE_META[k].kind==="dex");
+  const cexIds = Object.keys(SOURCE_META).filter(k=>SOURCE_META[k].kind==="cex");
+  const infraIds = Object.keys(INFRA_META);
+
+  ["grid-dex","grid-cex","grid-inf"].forEach(id=>{
+    const panel = document.getElementById(id).closest(".panel");
+    if (panel) panel.classList.toggle("greyed", !live);
+  });
+
+  if (!live){
+    document.getElementById("grid-dex").innerHTML = dexIds.map(emptySrcCard).join("");
+    document.getElementById("grid-cex").innerHTML = cexIds.map(emptySrcCard).join("");
+    document.getElementById("grid-inf").innerHTML = infraIds.map(id=>emptySrcCard(INFRA_META[id].label)).join("");
+    return;
+  }
+
+  const st = state.status;
+  const byId = {};
+  (st.sources||[]).forEach(s=>{ byId[s.id]=s; });
+  document.getElementById("grid-dex").innerHTML = dexIds.map(id=> byId[id] ? srcCard(byId[id]) : emptySrcCard(id)).join("");
+  document.getElementById("grid-cex").innerHTML = cexIds.map(id=> byId[id] ? srcCard(byId[id]) : emptySrcCard(id)).join("");
+  document.getElementById("grid-inf").innerHTML = infraIds.map(id=> infraCard(id, (st.infra||{})[id] || {})).join("");
+}
+
+function renderCounters(){
+  const st = state.status;
+  const live = isRenderableLive();
+  // Gated behind `live` like every other field below -- confirmed live
+  // that this mattered: without the gate, a schema-mismatch payload
+  // (which still parses fine, it just isn't SCHEMA_VERSION 1) displayed
+  // its real rows/cycles/errors counts even though the schema banner
+  // says not to trust it, exactly the "silently misrendering a changed
+  // schema" failure mode the schema-mismatch requirement exists to avoid.
+  const counters = (live && st.counters) || {};
+  const histCycles = state.historyCycles || [];
+
+  document.getElementById("c-rows").textContent = commas(counters.rows_total||0);
+  document.getElementById("c-cycles").textContent = counters.cycles_completed||0;
+
+  const avg = histCycles.length ? histCycles.reduce((a,c)=>a+c.total,0)/histCycles.length : null;
+  document.getElementById("c-cyclesub").textContent = avg!==null ? "avg "+avg.toFixed(0)+"s" : "avg —";
+
+  const dur = (live && st.cycle) ? st.cycle.elapsed_s : (histCycles.length ? histCycles[histCycles.length-1].total : 0);
+  const dEl = document.getElementById("c-dur");
+  dEl.textContent = dur.toFixed(0)+"s";
+  dEl.style.color = dur>CYCLE_TARGET ? "var(--stale)" : "var(--ok)";
+  document.getElementById("c-durs").textContent =
+    dur>CYCLE_TARGET ? "+"+(dur-CYCLE_TARGET).toFixed(0)+"s over target" : "within 300s target";
+
+  // "Tier 1 universe" = rows fetched by source segments so far this cycle
+  // (no dedicated counter for this in status.json -- derived the same way
+  // this quantity is genuinely defined: sum of this cycle's own per-source
+  // row counts).
+  const segs = (live && st.cycle) ? (st.cycle.completed_segments||[]) : [];
+  const t1Universe = segs.filter(s=>s.kind==="source").reduce((a,s)=>a+(s.rows||0),0);
+  document.getElementById("c-t1").textContent = compact(t1Universe);
+
+  const tier2 = (live && st.tier2) || {};
+  document.getElementById("c-t2").textContent = tier2.hot_total||0;
+  document.getElementById("c-t2sub").textContent = "age "+((tier2.age_based||{}).count||0)+" · growth "+((tier2.growth_based||{}).count||0);
+
+  document.getElementById("c-new").textContent = counters.new_entities_total||0;
+
+  const e4 = document.getElementById("c-413");
+  e4.textContent = counters.http_413_total||0;
+  e4.style.color = (counters.http_413_total||0)>0 ? "var(--bad)" : "var(--ok)";
+
+  const eE = document.getElementById("c-err");
+  eE.textContent = counters.errors_total||0;
+  eE.style.color = (counters.errors_total||0)>0 ? "var(--bad)" : "var(--ok)";
+  document.getElementById("c-errsub").textContent = "isolated per source";
+
+  document.querySelectorAll(".counters .ctr").forEach(el=>el.classList.toggle("greyed", !live));
+}
+
+/* meteora cursor -- no historical fallback exists for this (cycle_telemetry
+   doesn't carry per-cycle page-range detail), so it's simply blank/greyed
+   whenever the scheduler isn't live, rather than showing something stale
+   and mislabeled as current. */
+function renderCursor(){
+  const live = isRenderableLive();
+  const panel = document.getElementById("pagestrip").closest(".panel");
+  const mc = live ? (state.status.meteora_cursor || {}) : {};
+  const hasData = live && mc.total_pages;
+
+  if (panel) panel.classList.toggle("greyed", !hasData);
+
+  const strip = document.getElementById("pagestrip");
+  strip.innerHTML = "";
+  if (!hasData){
+    document.getElementById("mc-range").textContent = "—";
+    document.getElementById("mc-total").textContent = "—";
+    document.getElementById("mc-wrap").textContent = "—";
+    document.getElementById("mc-last").textContent = "—";
+    return;
+  }
+
+  const cells = 42;
+  for (let i=0;i<cells;i++){
+    const p = Math.round(i/cells*mc.total_pages)+1;
+    const d = document.createElement("div");
+    d.className = "pagecell" + (p>=mc.page_from && p<=mc.page_to ? " current" : p<mc.page_from ? " swept" : "");
+    strip.appendChild(d);
+  }
+  document.getElementById("mc-range").textContent = "pages "+mc.page_from+"–"+mc.page_to;
+  document.getElementById("mc-total").textContent = mc.total_pages+" pages · page_size=1000";
+  const step = Math.ceil(mc.total_pages/3) || 1;
+  const left = Math.ceil((mc.total_pages-mc.page_to)/step);
+  document.getElementById("mc-wrap").textContent = left<=0 ? "wrapping next cycle" : left+" cycle"+(left===1?"":"s")+" (~"+(left*8)+"m)";
+  document.getElementById("mc-last").textContent = mc.last_wrap_at ? clock(new Date(mc.last_wrap_at)) : "—";
+  document.getElementById("mc-cov").textContent = "full universe every ~3 cycles · sweep #"+(mc.sweep_count||0);
+}
+
+/* cycle execution timeline -- lives entirely on /api/status while the
+   scheduler is up; falls back to the most recent completed cycle from
+   /api/history (greyed) when it isn't, per the task's "last known cycle,
+   greyed out rather than blank" requirement. */
+function buildGanttPlan(){
+  const live = isRenderableLive();
+  if (live){
+    const cyc = state.status.cycle || {};
+    const stale = !!state.status.heartbeat_stale;
+    const segments = (cyc.completed_segments||[]).map(s=>({
+      label:s.name, dur:s.duration_s, color:segColor(s.name,s.kind), failed:s.failed, running:false,
+    }));
+    const cur = cyc.current_segment;
+    if (cur){
+      segments.push({label:cur.name, dur:cur.elapsed_s, color:segColor(cur.name,cur.kind), failed:false, running:!stale});
+    }
+    return {
+      segments, greyed:false, cycleN: cyc.n, elapsed: cyc.elapsed_s||0,
+      sub: stale ? "heartbeat stale — showing last known progress" : "sequential, single thread",
+    };
+  }
+
+  const cycles = state.historyCycles || [];
+  if (cycles.length){
+    const last = cycles[cycles.length-1];
+    const segments = last.parts.map(p=>({label:p.label, dur:p.dur, color:p.color, failed:p.failed, running:false}));
+    return {segments, greyed:true, cycleN: last.n, elapsed: last.total, sub:"last known cycle (scheduler not running)"};
+  }
+
+  return {segments:[], greyed:true, cycleN:null, elapsed:0, sub:"no cycle data yet"};
+}
+
+function renderGantt(){
+  const plan = buildGanttPlan();
+  const ganttPanel = document.getElementById("gantt").closest(".panel");
+  if (ganttPanel) ganttPanel.classList.toggle("greyed", plan.greyed);
+
+  const track = document.getElementById("track");
+  const projected = plan.segments.reduce((a,p)=>a+p.dur,0);
+  const total = Math.max(CYCLE_TARGET*1.1, projected);
+  track.innerHTML = "";
+
+  if (!plan.segments.length){
+    const empty = document.createElement("div");
+    empty.style.cssText = "display:flex;align-items:center;justify-content:center;width:100%;color:var(--ink-faint);font-family:var(--mono);font-size:11px";
+    empty.textContent = plan.sub;
+    track.appendChild(empty);
+  } else {
+    plan.segments.forEach(p=>{
+      const el = document.createElement("div");
+      el.className = "seg" + (p.running ? " running" : "");
+      el.style.width = (p.dur/total*100)+"%";
+      el.style.background = p.failed ? "var(--bad)" : p.color;
+      el.title = p.label+" · "+p.dur.toFixed(1)+"s";
+      track.appendChild(el);
+    });
+    const rest = document.createElement("div");
+    rest.style.flex = "1";
+    track.appendChild(rest);
+  }
+
+  const ov = document.createElement("div");
+  ov.className = "overrun";
+  ov.style.left = (CYCLE_TARGET/total*100)+"%";
+  ov.style.right = "0";
+  track.appendChild(ov);
+
+  const axis = document.getElementById("axis");
+  axis.innerHTML = "";
+  for (let t=0;t<=total;t+=120){
+    const d = document.createElement("div");
+    d.className="tickline"; d.style.left=(t/total*100)+"%";
+    axis.appendChild(d);
+    const lbl = document.createElement("span");
+    lbl.style.position="absolute"; lbl.style.left=(t/total*100)+"%"; lbl.style.top="2px";
+    lbl.textContent = t+"s";
+    axis.appendChild(lbl);
+  }
+  const tg = document.createElement("div");
+  tg.className="target"; tg.style.left=(CYCLE_TARGET/total*100)+"%";
+  tg.innerHTML = "<b>300s target</b>";
+  axis.appendChild(tg);
+
+  document.getElementById("gantt-sub").textContent =
+    (plan.cycleN!==null ? "cycle #"+plan.cycleN+" · " : "") + plan.sub + " · elapsed "+plan.elapsed.toFixed(0)+"s";
+
+  const sl = document.getElementById("seglabels");
+  sl.innerHTML = plan.segments.map(p=>
+    '<span><i style="background:'+(p.failed?"var(--bad)":p.color)+'"></i>'+escapeHtml(p.label)+' '+p.dur.toFixed(0)+'s</span>').join("");
+}
+
+/* history chart -- draws from state.historyCycles (last-good data);
+   /api/history failing just overlays an inline message on top via
+   renderHistoryPanel(), it doesn't touch drawHist's own data. */
+const hc = document.getElementById("cyclehist");
+const hTip = document.getElementById("hist-tip");
+let histGeom = [];
+
+function drawHist(){
+  const dpr = window.devicePixelRatio||1;
+  const w = hc.clientWidth, h = hc.clientHeight;
+  hc.width=w*dpr; hc.height=h*dpr;
+  const g = hc.getContext("2d");
+  g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w,h);
+
+  const cycles = state.historyCycles || [];
+  const padT=6, padB=16, plot=h-padT-padB;
+  const max = Math.max(CYCLE_TARGET*1.6, ...cycles.map(x=>x.total))*1.08;
+  const n = 40;
+  const bw = w/n, gap = Math.min(3, bw*.25);
+
+  g.strokeStyle="#1c2836";
+  for(let i=1;i<=3;i++){const y=Math.round(padT+plot*(i/4))+.5;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
+
+  histGeom=[];
+  cycles.slice(-n).forEach((cy,i)=>{
+    const x = i*bw+gap/2, bwid=bw-gap;
+    let y = padT+plot;
+    cy.parts.forEach(pt=>{
+      const ph = plot*(pt.dur/max);
+      g.fillStyle = pt.failed ? "#ff5f5f" : cssVar(pt.color);
+      g.fillRect(x, y-ph, bwid, ph);
+      y -= ph;
+    });
+    histGeom.push({x,w:bwid,cy});
+  });
+
+  const ty = Math.round(padT+plot-plot*(CYCLE_TARGET/max))+.5;
+  g.strokeStyle="#f5b731"; g.lineWidth=1; g.setLineDash([4,3]);
+  g.beginPath(); g.moveTo(0,ty); g.lineTo(w,ty); g.stroke(); g.setLineDash([]);
+
+  g.fillStyle="#5c7286"; g.font="10px ui-monospace, monospace";
+  g.fillText(Math.round(max)+"s", 2, 10);
+  g.fillStyle="#f5b731"; g.fillText("300s", w-30, ty-3);
+}
+function cssVar(v){
+  if(!v.startsWith("var(")) return v;
+  return getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim();
+}
+hc.addEventListener("mousemove",e=>{
+  const r=hc.getBoundingClientRect(), x=e.clientX-r.left;
+  const hit=histGeom.find(b=>x>=b.x&&x<=b.x+b.w);
+  if(!hit){hTip.style.opacity=0;return;}
+  const top = hit.cy.parts.slice().sort((a,b)=>b.dur-a.dur).slice(0,4)
+    .map(p=>"  "+p.label.padEnd(18)+p.dur.toFixed(0)+"s").join("\n");
+  hTip.textContent = "cycle #"+hit.cy.n+"  total "+hit.cy.total.toFixed(0)+"s\n"+top;
+  hTip.style.opacity=1;
+  hTip.style.left=Math.min(x+10, hc.clientWidth-190)+"px";
+  hTip.style.top="8px";
+});
+hc.addEventListener("mouseleave",()=>{hTip.style.opacity=0;});
+
+function renderHistoryPanel(){
+  const errEl = document.getElementById("hist-error");
+  if (state.historyError){
+    errEl.hidden = false;
+    errEl.textContent = "History unavailable: " + state.historyError;
+  } else {
+    errEl.hidden = true;
+  }
+  drawHist();
+}
+
+/* Tier 2 registry / detection feed -- there is no dedicated events
+   endpoint (only aggregate counters exist), so this is derived from the
+   same /api/logs tail already being fetched for the Run log panel below,
+   picking out the T2M (tier2.py) promotion/demotion lines and DET
+   (detection) lines with new_count>0. Aggregate-level detail only (a
+   cycle's promoted/demoted *count* per venue, not individual pool
+   addresses) -- that's what the log lines actually carry. */
+function reasonCls(r){
+  if(r.startsWith("age")) return "age";
+  if(r.startsWith("growth")) return "growth";
+  if(r.startsWith("cex")||r.startsWith("listing")) return "listing";
+  return "";
+}
+function classifyLogEvent(l){
+  const f = l.fields || {};
+  if (l.src === "T2M"){
+    if (f.event === "age_based_promoted") return {kind:"promote", title:"age-based promotion", reason:"age_72h", detail:(f.count||"0")+" pool(s)"};
+    if (f.event === "growth_based_rescored"){
+      const promoted = Number(f.promoted||0), demoted = Number(f.demoted||0);
+      if (promoted>0) return {kind:"promote", title:f.venue||"", reason:"growth", detail:"promoted "+promoted+" · demoted "+demoted};
+      if (demoted>0) return {kind:"demote", title:f.venue||"", reason:"growth", detail:"promoted "+promoted+" · demoted "+demoted};
+    }
+    if (f.event === "new_listing_promoted") return {kind:"promote", title:"new CEX listing", reason:"cex_listing", detail:(f.count||"0")+" pool(s)"};
+  }
+  if (l.src === "DET" && f.event === "detection" && Number(f.new||0) > 0){
+    return {kind:"newent", title:(f.venue||f.exchange||""), reason:"known_entities_insert", detail:f.new+" new"};
+  }
+  return null;
+}
+function renderFeed(){
+  const events = [];
+  for (const l of state.logs){ // already newest-first
+    const ev = classifyLogEvent(l);
+    if (ev) events.push(Object.assign({ts:l.ts}, ev));
+    if (events.length>=80) break;
+  }
+  document.getElementById("ev-count").textContent = events.length+" events";
+  document.getElementById("feed").innerHTML = events.length ? events.map(e=>{
+    const verb = e.kind==="promote" ? "promoted → Tier 2 hot"
+               : e.kind==="demote"  ? "demoted → Tier 1 only"
+               : "new entity";
+    return '<div class="ev '+e.kind+'">'+
+      '<div class="ts">'+(e.ts||"—")+'</div><div class="body">'+
+      escapeHtml(e.title)+'<br><span class="verb">'+verb+'</span>'+
+      '<span class="reason '+reasonCls(e.reason)+'">'+escapeHtml(e.reason)+'</span>'+
+      (e.detail?'<span class="reason">'+escapeHtml(e.detail)+'</span>':'')+
+      '</div></div>';
+  }).join("") : '<div style="padding:16px;text-align:center;color:var(--ink-faint);font-size:11.5px">no registry/detection events in the current log window</div>';
+}
+
+/* hot pool table */
+function hotRow(p){
+  const failed = !!p.last_poll_failed;
+  const lastPolled = p.last_polled_at ? new Date(p.last_polled_at) : null;
+  const ageS = lastPolled ? (Date.now()-lastPolled.getTime())/1000 : null;
+  const pct = ageS===null ? 0 : Math.min(100, ageS/T2_REPOLL*100);
+  const stale = ageS!==null && ageS>T2_REPOLL;
+  const bar = failed ? "over" : pct>100 ? "over" : pct>75 ? "warn" : "";
+  const rowc = failed ? "row-dead" : (stale ? "row-stale" : "");
+  const fresh = failed ? '<span class="chip bad">NO RESPONSE</span>'
+    : stale ? '<span class="chip stale">STALE</span>'
+    : '<span class="chip ok">OK</span>';
+  const liq = (p.active_liquidity===null || p.active_liquidity===undefined)
+    ? '<span class="placeholder">tvl_usd placeholder</span>'
+    : '$'+compact(p.active_liquidity);
+  const volg = p.volume_growth_24h, tvlg = p.tvl_growth_24h;
+  const hyst = Math.min(3, p.consecutive_below||0);
+  const pips = [0,1,2].map(i=>'<span class="pip'+(i<hyst?" on":"")+'"></span>').join("");
+  const addr = p.pool_id || "";
+  const path = String(p.path||"");
+  return '<tr class="'+rowc+'">'+
+    '<td class="addr">'+escapeHtml(addr.slice(0,10))+'…'+escapeHtml(addr.slice(-4))+'</td>'+
+    '<td class="venue">'+escapeHtml(p.venue||"—")+'</td>'+
+    '<td>'+escapeHtml(p.pair||"—")+'</td>'+
+    '<td><span class="chip '+escapeHtml(path)+'">'+escapeHtml(path.toUpperCase())+'</span></td>'+
+    '<td class="num">'+(p.price_native!==null && p.price_native!==undefined ? price(p.price_native) : "—")+'</td>'+
+    '<td class="num">'+liq+'</td>'+
+    '<td class="num" style="color:'+(volg>3?"var(--ok)":"")+'">'+(volg!==null && volg!==undefined ? volg.toFixed(1)+"×" : "—")+'</td>'+
+    '<td class="num" style="color:'+(tvlg>2?"var(--ok)":"")+'">'+(tvlg!==null && tvlg!==undefined ? tvlg.toFixed(1)+"×" : "—")+'</td>'+
+    '<td>'+(ageS!==null ? '<span class="agebar '+bar+'"><span style="width:'+Math.min(100,pct)+'%"></span></span> <span class="addr">'+ageS.toFixed(0)+'s/'+T2_REPOLL+'s</span>' : "—")+'</td>'+
+    '<td>'+fresh+'</td>'+
+    '<td class="addr">'+escapeHtml(p.hot_reason||"—")+'</td>'+
+    '<td><span class="pips">'+pips+'</span></td>'+
+  '</tr>';
+}
+
+function renderHot(){
+  const live = isRenderableLive();
+  const panel = document.getElementById("hottable").closest(".panel");
+  if (panel) panel.classList.toggle("greyed", !live);
+
+  const tier2 = live ? (state.status.tier2||{}) : {};
+  const pools = tier2.pools || [];
+  document.getElementById("hot-count").textContent =
+    pools.length+" pools"+(tier2.pools_cap_hit?" (capped)":"")+" · cap "+MAX_PER_VENUE+"/venue/poll";
+
+  const rows = pools.slice().sort((a,b)=>{
+    const ta = a.last_polled_at ? new Date(a.last_polled_at).getTime() : 0;
+    const tb = b.last_polled_at ? new Date(b.last_polled_at).getTime() : 0;
+    return ta - tb; // stalest (oldest poll) first
+  });
+  document.querySelector("#hottable tbody").innerHTML = rows.length
+    ? rows.map(hotRow).join("")
+    : '<tr><td colspan="12" style="text-align:center;color:var(--ink-faint);padding:16px">'+
+      (live ? "no hot pools" : "no data (scheduler not running)")+'</td></tr>';
+}
+
+/* logs -- server already applies the level filter and returns
+   newest-first, matching this panel's display order 1:1. */
+function renderLogs(){
+  const rows = state.logs;
+  document.getElementById("log-count").textContent = rows.length+" lines";
+  document.querySelector("#logtable tbody").innerHTML = rows.length ? rows.map(l=>{
+    const level = l.level || "RAW";
+    const fields = l.fields && Object.keys(l.fields).length
+      ? Object.entries(l.fields).map(([k,v])=>'<span class="k">'+escapeHtml(k)+'=</span><span class="v">'+escapeHtml(v)+'</span>').join(" ")
+      : escapeHtml(l.raw||"");
+    // title=raw on every row, not just unparsed ones: a field value that
+    // itself contains a space (e.g. an exception message) splits across
+    // multiple "words" the key=value tokenizer can't reattach to their
+    // key -- confirmed live against this scheduler's own logs (MET's
+    // "err=non-positive price: 0.0" renders as just "err=non-positive").
+    // The parsed dict is still the right primary display (matches the
+    // documented convention for the common case), but the full line stays
+    // one hover away instead of silently vanishing.
+    return '<tr class="lvl-'+level.toLowerCase()+'" title="'+escapeHtml(l.raw||"")+'">'+
+      '<td class="addr">'+(l.ts||"—")+'</td>'+
+      '<td><span class="lvltag">'+level+'</span></td>'+
+      '<td class="venue">'+escapeHtml(l.src||"—")+'</td>'+
+      '<td class="msg kv">'+fields+'</td></tr>';
+  }).join("") : '<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);padding:16px">no log lines yet</td></tr>';
+}
+document.getElementById("logfilters").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  state.logFilter=b.dataset.lvl;
+  [...e.currentTarget.querySelectorAll("button")].forEach(x=>x.classList.toggle("on",x===b));
+  document.getElementById("logwrap").scrollTop=0;
+  pollLogs(); // re-fetch with the new filter immediately, don't wait for the 3s interval
+});
+
+/* controls */
+document.getElementById("btn-pause").addEventListener("click",e=>{
+  state.paused=!state.paused;
+  e.target.textContent=state.paused?"Resume":"Pause";
+  e.target.classList.toggle("on",!state.paused);
+});
+window.addEventListener("resize",()=>{drawHist();renderGantt();});
+
+/* ==========================================================================
+   INIT — first poll of each endpoint immediately, then on their own
+   intervals (2s status / 3s logs / 30s history, per the task spec).
+   ========================================================================== */
+pollStatus();
+pollHistory();
+pollLogs();
+setInterval(pollStatus, 2000);
+setInterval(pollLogs, 3000);
+setInterval(pollHistory, 30000);
+</script>
+</body>
+</html>

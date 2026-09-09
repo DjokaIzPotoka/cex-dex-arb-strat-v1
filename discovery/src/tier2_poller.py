@@ -92,7 +92,8 @@ from discovery.src.providers.solana_rpc_state import (
     OrcaWhirlpoolRpcStateProvider,
     RaydiumClmmRpcStateProvider,
 )
-from discovery.src.tier2 import Tier2State
+from discovery.src.telemetry import RunTelemetry, segment_or_noop
+from discovery.src.tier2 import AGE_BASED_WINDOW, DEMOTION_CONSECUTIVE_CYCLES, Tier2State
 
 TIER2_POLL_SRC = "T2P"
 TIER2_POLL_INTERVAL_S = 60.0
@@ -117,6 +118,22 @@ MAX_POOLS_PER_VENUE_PER_POLL = 100
 RPC_VENUES = {VENUE_ORCA, VENUE_RAYDIUM_CLMM}
 
 DEFAULT_SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com"
+
+# Phase 2a (telemetry) only: venues whose active_liquidity is a genuine
+# temporary placeholder (tvl_usd copied verbatim, pending real decoding
+# -- see meteora_dlmm.py's own TODO(Phase 1h) comment), as opposed to
+# raydium_amm_v4's tvl_usd==active_liquidity, which is correct BY
+# DESIGN for a constant-product pool (see raydium_amm_v4.py's
+# _compute_active_liquidity: "Not a TODO(Phase 1h) placeholder, unlike
+# CLMM... tvl_usd genuinely *is* active_liquidity", and design doc
+# section 3.5's own note). Deliberately NOT raydium_amm_v4 -- see this
+# session's summary for why status.json nulls active_liquidity here
+# for meteora_dlmm only, not for both, despite CLAUDE.md's Phase 1h
+# paragraph grouping the two together as both "carrying the tvl_usd
+# placeholder" (a looser summary that doesn't distinguish
+# correct-by-design from genuinely-temporary the way the code and the
+# design doc both do).
+TELEMETRY_PLACEHOLDER_ACTIVE_LIQUIDITY_VENUES = {"meteora_dlmm"}
 
 
 def build_tier2_providers(rpc_url: Optional[str] = None) -> dict[str, object]:
@@ -164,10 +181,12 @@ class Tier2Poller:
         tier2_state: Tier2State,
         providers: Optional[dict[str, object]] = None,
         rpc_url: Optional[str] = None,
+        telemetry: Optional[RunTelemetry] = None,
     ):
         self._client = client
         self._tier2_state = tier2_state
         self._providers = providers or build_tier2_providers(rpc_url)
+        self._telemetry = telemetry
         self._last_poll_monotonic: Optional[float] = None
         # Round-robin cursor per venue, into that venue's *sorted*
         # current hot-pool list -- sorted so the window is stable
@@ -196,84 +215,177 @@ class Tier2Poller:
         hot_pools = self._tier2_state.current_hot_pools()
         if not hot_pools:
             log(Level.INFO, [("event", "poll_skipped"), ("reason", "no_hot_pools")], src=TIER2_POLL_SRC)
+            if self._telemetry is not None:
+                self._telemetry.record_tier2_snapshot(self._tier2_snapshot(0.0, {}, []))
             return {"hot_pools": 0, "rows_written": 0}
 
-        # Split by mechanism, not just by venue: growth-based membership
-        # is prioritized whole into every batch (see _next_batch's
-        # docstring for why), so it needs to stay a separate list from
-        # age-based rather than being pre-merged into one undifferentiated
-        # per-venue rotation the way current_hot_pools() merges them.
-        growth_by_venue: dict[str, list[str]] = {}
-        for venue, pool_address in self._tier2_state.growth_based.hot_keys():
-            growth_by_venue.setdefault(venue, []).append(pool_address)
+        with segment_or_noop(self._telemetry, "tier2_poll", "tier2_poll") as seg:
+            # Split by mechanism, not just by venue: growth-based membership
+            # is prioritized whole into every batch (see _next_batch's
+            # docstring for why), so it needs to stay a separate list from
+            # age-based rather than being pre-merged into one undifferentiated
+            # per-venue rotation the way current_hot_pools() merges them.
+            growth_by_venue: dict[str, list[str]] = {}
+            for venue, pool_address in self._tier2_state.growth_based.hot_keys():
+                growth_by_venue.setdefault(venue, []).append(pool_address)
 
-        age_by_venue: dict[str, list[str]] = {}
-        for venue, pool_address in self._tier2_state.age_based.hot_keys():
-            age_by_venue.setdefault(venue, []).append(pool_address)
+            age_by_venue: dict[str, list[str]] = {}
+            for venue, pool_address in self._tier2_state.age_based.hot_keys():
+                age_by_venue.setdefault(venue, []).append(pool_address)
 
-        by_venue: dict[str, list[str]] = {}
-        for venue, pool_address in hot_pools:
-            by_venue.setdefault(venue, []).append(pool_address)
+            by_venue: dict[str, list[str]] = {}
+            for venue, pool_address in hot_pools:
+                by_venue.setdefault(venue, []).append(pool_address)
 
-        snapshot_ts = datetime.datetime.now(datetime.timezone.utc)
-        t0 = time.monotonic()
-        rows_written = 0
+            snapshot_ts = datetime.datetime.now(datetime.timezone.utc)
+            t0 = time.monotonic()
+            rows_written = 0
+            venue_capped: dict[str, bool] = {}
+            pool_entries: list[dict] = []
 
-        for venue, addresses in by_venue.items():
-            provider = self._providers.get(venue)
-            if provider is None:
-                continue  # shouldn't happen -- every DEX venue has a Tier 2 provider -- but never crash the poll over it
+            for venue, addresses in by_venue.items():
+                provider = self._providers.get(venue)
+                if provider is None:
+                    continue  # shouldn't happen -- every DEX venue has a Tier 2 provider -- but never crash the poll over it
 
-            batch = self._next_batch(venue, growth_by_venue.get(venue, []), age_by_venue.get(venue, []))
-            if len(batch) < len(addresses):
-                log(
-                    Level.INFO,
-                    [
-                        ("event", "poll_batch_capped"),
-                        ("venue", venue),
-                        ("hot_total", str(len(addresses))),
-                        ("growth_total", str(len(growth_by_venue.get(venue, [])))),
-                        ("this_batch", str(len(batch))),
-                    ],
-                    src=TIER2_POLL_SRC,
-                )
-
-            if venue in RPC_VENUES:
-                rows = self._poll_venue_via_rpc(venue, provider, batch, snapshot_ts)
-            else:
-                try:
-                    pool_rows = provider.get_pools(batch)
-                except Exception as exc:  # noqa: BLE001 -- same failure-isolation contract as scheduler.py's Tier 1 sources
+                batch = self._next_batch(venue, growth_by_venue.get(venue, []), age_by_venue.get(venue, []))
+                capped = len(batch) < len(addresses)
+                venue_capped[venue] = capped
+                if capped:
                     log(
-                        Level.ERROR,
-                        [("event", "poll_source_FAILED"), ("venue", venue), ("pool_count", str(len(batch))), ("err", str(exc))],
+                        Level.INFO,
+                        [
+                            ("event", "poll_batch_capped"),
+                            ("venue", venue),
+                            ("hot_total", str(len(addresses))),
+                            ("growth_total", str(len(growth_by_venue.get(venue, [])))),
+                            ("this_batch", str(len(batch))),
+                        ],
                         src=TIER2_POLL_SRC,
                     )
-                    continue
 
-                rows = []
-                for pool_row in pool_rows:
-                    tier, hot_reason = self._tier2_state.tier_and_reason(venue, pool_row.pool_address)
-                    rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
+                path = "rpc" if venue in RPC_VENUES else "rest"
+                if venue in RPC_VENUES:
+                    rows = self._poll_venue_via_rpc(venue, provider, batch, snapshot_ts)
+                else:
+                    try:
+                        pool_rows = provider.get_pools(batch)
+                    except Exception as exc:  # noqa: BLE001 -- same failure-isolation contract as scheduler.py's Tier 1 sources
+                        log(
+                            Level.ERROR,
+                            [("event", "poll_source_FAILED"), ("venue", venue), ("pool_count", str(len(batch))), ("err", str(exc))],
+                            src=TIER2_POLL_SRC,
+                        )
+                        pool_entries.extend(
+                            self._pool_telemetry_entry(venue, addr, path, snapshot_ts) for addr in batch
+                        )
+                        continue
 
-            if rows:
-                columns = list(rows[0].keys())
-                data = [[row[c] for c in columns] for row in rows]
-                self._client.insert("dex_pool_snapshots", data, column_names=columns)
-                rows_written += len(rows)
+                    rows = []
+                    for pool_row in pool_rows:
+                        tier, hot_reason = self._tier2_state.tier_and_reason(venue, pool_row.pool_address)
+                        rows.append(pool_row.to_snapshot_row(snapshot_ts=snapshot_ts, tier=tier, hot_reason=hot_reason))
 
-        elapsed = time.monotonic() - t0
-        log(
-            Level.INFO,
-            [
-                ("event", "poll_done"),
-                ("hot_pools", str(len(hot_pools))),
-                ("rows_written", str(rows_written)),
-                ("elapsed_s", f"{elapsed:.1f}"),
-            ],
-            src=TIER2_POLL_SRC,
-        )
+                produced = {row["pool_address"] for row in rows}
+                for row in rows:
+                    pool_entries.append(self._pool_telemetry_entry(venue, row["pool_address"], path, snapshot_ts, row=row))
+                for addr in batch:
+                    if addr not in produced:
+                        pool_entries.append(self._pool_telemetry_entry(venue, addr, path, snapshot_ts))
+
+                if rows:
+                    columns = list(rows[0].keys())
+                    data = [[row[c] for c in columns] for row in rows]
+                    self._client.insert("dex_pool_snapshots", data, column_names=columns)
+                    rows_written += len(rows)
+
+            elapsed = time.monotonic() - t0
+            log(
+                Level.INFO,
+                [
+                    ("event", "poll_done"),
+                    ("hot_pools", str(len(hot_pools))),
+                    ("rows_written", str(rows_written)),
+                    ("elapsed_s", f"{elapsed:.1f}"),
+                ],
+                src=TIER2_POLL_SRC,
+            )
+
+            seg.rows = rows_written
+            seg.extra = {"venue_capped": venue_capped, "rpc_venues": sorted(RPC_VENUES)}
+
+            if self._telemetry is not None:
+                self._telemetry.record_tier2_snapshot(self._tier2_snapshot(elapsed, venue_capped, pool_entries))
+
         return {"hot_pools": len(hot_pools), "rows_written": rows_written}
+
+    def _tier2_snapshot(self, elapsed_s: float, venue_capped: dict[str, bool], pools: list[dict]) -> dict:
+        """Phase 2a (telemetry) only: the dict merged into status.json's
+        "tier2" section by RunTelemetry.record_tier2_snapshot(). Read
+        directly from Tier2State/this poller's own already-in-memory
+        state -- no query, so this stays cheap even though it's built
+        on every poll pass (including the "nothing hot" no-op above).
+        """
+        return {
+            "hot_total": len(self._tier2_state.current_hot_pools()),
+            "age_based": {
+                "count": len(self._tier2_state.age_based),
+                "window_h": AGE_BASED_WINDOW.total_seconds() / 3600.0,
+            },
+            "growth_based": {
+                "count": len(self._tier2_state.growth_based),
+                "hysteresis_cycles": DEMOTION_CONSECUTIVE_CYCLES,
+            },
+            "last_poll_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "last_poll_duration_s": round(elapsed_s, 1),
+            "max_pools_per_venue_per_poll": MAX_POOLS_PER_VENUE_PER_POLL,
+            "venue_capped": venue_capped,
+            "pools": pools,
+        }
+
+    def _pool_telemetry_entry(
+        self, venue: str, pool_address: str, path: str, snapshot_ts: datetime.datetime, row: Optional[dict] = None
+    ) -> dict:
+        """Phase 2a (telemetry) only: one status.json "tier2.pools"
+        entry, from a row this poll pass already produced (`row` given
+        -- a successful poll) or from just the address (`row=None` --
+        this pool was in the batch but didn't come back, e.g. an RPC
+        account-not-found or a whole-batch REST failure). Never queries
+        anything -- growth data comes from GrowthBasedRegistry.entry(),
+        already-in-memory state, not a fresh computation.
+
+        `active_liquidity` is nulled for
+        TELEMETRY_PLACEHOLDER_ACTIVE_LIQUIDITY_VENUES (meteora_dlmm
+        only -- see that constant's own comment for why raydium_amm_v4
+        is deliberately NOT included despite CLAUDE.md's Phase 1h
+        paragraph grouping the two together).
+        """
+        growth_entry = self._tier2_state.growth_based.entry(venue, pool_address)
+        if row is not None:
+            pair = f"{row['base_symbol']}/{row['quote_symbol']}"
+            active_liquidity = None if venue in TELEMETRY_PLACEHOLDER_ACTIVE_LIQUIDITY_VENUES else row["active_liquidity"]
+            price_native = row["price_native"]
+            hot_reason = row["hot_reason"]
+        else:
+            pair = None
+            active_liquidity = None
+            price_native = None
+            _, hot_reason = self._tier2_state.tier_and_reason(venue, pool_address)
+
+        return {
+            "pool_id": pool_address,
+            "venue": venue,
+            "pair": pair,
+            "path": path,
+            "price_native": price_native,
+            "active_liquidity": active_liquidity,
+            "volume_growth_24h": growth_entry.last_volume_growth if growth_entry else None,
+            "tvl_growth_24h": growth_entry.last_tvl_growth if growth_entry else None,
+            "hot_reason": hot_reason,
+            "consecutive_below": growth_entry.consecutive_below_threshold if growth_entry else 0,
+            "last_polled_at": snapshot_ts.isoformat(),
+            "last_poll_failed": row is None,
+        }
 
     def _fetch_latest_known_rows(self, venue: str, pool_addresses: list[str]) -> dict[str, dict]:
         """Latest known REST-derived row per pool_address (from
