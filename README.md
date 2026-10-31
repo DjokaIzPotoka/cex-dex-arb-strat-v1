@@ -2,7 +2,6 @@
 # Setup baze
 docker-compose up -d
 =======
-# ZORA
 
 CEX-DEX arbitrage bot for SOL/USDC. Three processes work together:
 
