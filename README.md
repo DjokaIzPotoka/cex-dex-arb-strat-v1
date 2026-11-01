@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-# Setup baze
 docker-compose up -d
 =======
 
