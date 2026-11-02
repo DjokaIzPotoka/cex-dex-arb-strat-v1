@@ -1,5 +1,3 @@
-docker-compose up -d
-=======
 
 CEX-DEX arbitrage bot for SOL/USDC. Three processes work together:
 
